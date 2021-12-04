@@ -1,85 +1,99 @@
-const bingo = `7,4,9,5,11,17,23,2,0,14,21,24,10,16,13,6,15,25,12,22,18,20,8,19,3,26,1
-
-22 13 17 11  0
- 8  2 23  4 24
-21  9 14 16  7
- 6 10  3 18  5
- 1 12 20 15 19
-
- 3 15  0  2 22
- 9 18 13 17  5
-19  8  7 25 23
-20 11 10 24  4
-14 21 16 12  6
-
-14 21 17 24  4
-10 16 15  9 19
-18  8 23 26 20
-22 11 13  6  5
- 2  0 12  3  7
-`
-// const bing = require('./input')(4)
-
-const CONTROL = 5
-
+const input = require('./input')
 const toNumber = n => parseInt(n, 10)
-const numbers = bingo.split(`\n`)[0].split(',').map(toNumber)
-const grids = []
-bingo.replace(/(?: ?\d+\s+\d+\s+\d+\s+\d+\s+\d+(?:\n|$)){5}/g, gridNumbersText => {
-  const gridNumbers = gridNumbersText.split(/\s+/).filter(c => !!c).map(toNumber)
-  const grid = [[], [], [], [], []]
-  gridNumbers.forEach((number, index) => {
-    grid[Math.floor(index / 5)][index % 5] = number
-  })
-  grid.push([])
-  for (let index = 0; index < 5; ++index) {
-    grid[index].push({ sum: 0, ticked: 0 })
-    grid[CONTROL].push({ sum: 0, ticked: 0 })
-  }
-  grids.push(grid)
-})
 
-function showGrid (grid) {
-  for (let row = 0; row < 5; ++row) {
-    const buffer = []
-    for (let col = 0; col < 5; ++col) {
-      buffer.push(grid[row][col].toString().padStart(5, ' '))
+const numbers = input.split('\n')[0].split(',').map(toNumber)
+
+class Grid {
+  constructor (numbers) {
+    this._rowMarked = [0, 0, 0, 0, 0]
+    this._colMarked = [0, 0, 0, 0, 0]
+    this._numbers = {}
+    this._completed = false
+    numbers.forEach((number, index) => {
+      const col = index % 5
+      const row = (index - col) / 5
+      this._numbers[number] = { row, col }
+    })
+  }
+
+  check (number) {
+    const { row, col } = this._numbers[number] ?? {}
+    if (row !== undefined && col !== undefined) {
+      this._numbers[number].marked = true
+      if (++this._rowMarked[row] === 5 ||
+        ++this._colMarked[col] === 5) {
+        this._completed = true
+      }
+      return this._completed
     }
-    console.log(buffer.join(' '), grid[row][CONTROL].sum, grid[row][CONTROL].ticked)
   }
-}
 
-grids.forEach(showGrid)
-
-function found (control, number) {
-  control.sum += number
-  if (++control.ticked === 5) {
-    return control.sum * number
+  get completed () {
+    return this._completed
   }
-}
 
-function set (grid, number) {
-  for (row = 0; row < 5; ++row) {
-    for (col = 0; col < 5; ++col) {
-      if (grid[row][col] === number) {
-        grid[row][col] = 'X'
-        const result = found(grid[row][CONTROL], number) || found(grid[CONTROL][col], number)
-        if (result) {
-          return result
+  sumOfUnmarked () {
+    return Object.keys(this._numbers)
+      .filter(number => !this._numbers[number].marked)
+      .map(toNumber)
+      .reduce((sum, number) => sum + number, 0)
+  }
+
+  // Not the fastest way but for debugging
+  _at (atRow, atCol) {
+    const number = Object.keys(this._numbers)
+      .filter(number => {
+        const { row, col } = this._numbers[number]
+        return row === atRow && col === atCol
+      })[0]
+    return {
+      ...this._numbers[number],
+      number
+    }
+  }
+
+  display () {
+    for (let row = 0; row < 5; ++row) {
+      const buffer = []
+      for (let col = 0; col < 5; ++col) {
+        const data = this._at(row, col)
+        const number = data.number.toString().padStart(2, ' ')
+        if (data.marked) {
+          buffer.push(`[${number}]`)
+        } else {
+          buffer.push(` ${number} `)
         }
       }
+      console.log(buffer.join(' '), `| ${this._rowMarked[row]}`)
     }
+    console.log('-------------------------+')
+    const buffer = []
+    for (let col = 0; col < 5; ++col) {
+      buffer.push(`  ${this._colMarked[col]}  `)
+    }
+    console.log(buffer.join(''), '\n')
   }
 }
 
-let result
-numbers.every(number => {
-  console.log(number)
-  grids.every(grid => {
-    result = set(grid, number)
-    return !result
-  })
-  return !result
+const grids = []
+input.replace(/(?: ?\d+\s+\d+\s+\d+\s+\d+\s+\d+(?:\r?\n|$)){5}/g, gridNumbersText => {
+  const gridNumbers = gridNumbersText.split(/\s+/).filter(c => !!c).map(toNumber)
+  grids.push(new Grid(gridNumbers))
 })
 
-console.log(grids, result)
+// grids.forEach(grid => grid.display())
+
+numbers.forEach(number => {
+  grids
+    .forEach((grid, index) => {
+      if (grid.completed) {
+        return
+      }
+      if (grid.check(number)) {
+        // grid.display()
+        console.log(`grid ${index + 1}`, grid.sumOfUnmarked(), '*', number, '=', grid.sumOfUnmarked() * number)
+      }
+    })
+})
+
+// grids.forEach(grid => grid.display())
