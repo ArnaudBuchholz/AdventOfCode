@@ -1,5 +1,5 @@
-const depthsTxt = require('./input')(1)
-const depths = depthsTxt.split('\n').map(value => parseInt(value, 10))
+const input = require('./input')
+const depths = input.split('\n').map(value => parseInt(value, 10))
 
 function getIncreaseCount (array) {
   const { count } = array.reduce(({ last, count }, depth) => {
