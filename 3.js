@@ -1,6 +1,5 @@
-// const reportTxt = '00100\n11110\n10110\n10111\n10101\n01111\n00111\n11100\n10000\n11001\n00010\n01010'
-const reportTxt = require('./input')(3)
-const report = reportTxt.split('\n')
+const input = require('./input')
+const report = input.split('\n')
 
 const numberOfBits = report[0].length
 const bitsCounts = report.reduce((state, [...bits]) => {
