@@ -1,6 +1,5 @@
-// const movesTxt = 'forward 5\ndown 5\nforward 8\nup 3\ndown 8\nforward 2'
-const movesTxt = require('./input')(2)
-const moves = movesTxt.split('\n')
+const input = require('./input')
+const moves = input.split('\n')
 
 const part1 = moves.reduce(({ depth, position }, move) => {
   const [command, arg] = move.split(' ')
