@@ -13,7 +13,7 @@ let optimalPosition
 let optimalFuel = Number.MAX_SAFE_INTEGER
 
 for (let proposal = min; proposal <= max; ++proposal) {
-  let fuel = positions.reduce((total, position) => total + Math.abs(position - proposal), 0)
+  const fuel = positions.reduce((total, position) => total + Math.abs(position - proposal), 0)
   if (fuel < optimalFuel) {
     optimalPosition = proposal
     optimalFuel = fuel
@@ -34,7 +34,7 @@ function cost (steps) {
 cost.memorized = [0, 1]
 
 for (let proposal = min; proposal <= max; ++proposal) {
-  let fuel = positions.reduce((total, position) => total + cost(Math.abs(position - proposal)), 0)
+  const fuel = positions.reduce((total, position) => total + cost(Math.abs(position - proposal)), 0)
   if (fuel < optimalFuel) {
     optimalPosition = proposal
     optimalFuel = fuel
