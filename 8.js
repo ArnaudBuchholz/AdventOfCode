@@ -13,25 +13,24 @@ const attempts = input
     }
   })
 
-const referenceSegmentsPerDigits = [
-  'abcefg',  //             frequency for the 10 digits
-  'cf',      //  aaaa       a = 8
-  'acdeg',   // b    c      b = 6 <- unique
-  'acdfg',   // b    c      c = 8
-  'bcdf',    //  dddd       d = 7
-  'abdfg',   // e    f      e = 4 <- unique
-  'abdefg',  // e    f      f = 9 <- unique
-  'acf',     //  gggg       g = 7
-  'abcdefg', //
-  'abcdfg'   //
-]
+/*             frequency over the 10 digits
+    aaaa       a = 8
+   b    c      b = 6 <- unique
+   b    c      c = 8
+    dddd       d = 7
+   e    f      e = 4 <- unique
+   e    f      f = 9 <- unique
+    gggg       g = 7                     */
+
+const referenceSegmentsPerDigits = ['abcefg', 'cf', 'acdeg', 'acdfg', 'bcdf', 'abdfg', 'abdefg', 'acf', 'abcdefg', 'abcdfg']
+const asciiOfa = 'a'.charCodeAt(0)
 
 function buildSegmentsFrequencies (segmentsPerDigits) {
   const frequencies = [0, 0, 0, 0, 0, 0, 0]
   segmentsPerDigits
     .forEach(segmentsForOneDigit => segmentsForOneDigit
       .split('')
-      .forEach(segment => ++frequencies[segment.charCodeAt(0) - 'a'.charCodeAt(0)])
+      .forEach(segment => ++frequencies[segment.charCodeAt(0) - asciiOfa])
     )
   return frequencies
 }
@@ -42,37 +41,37 @@ console.log(referenceSegmentsFrequency.reduce((summary, frequency, index) =>
 , 'Frequency chart :'))
 
 const uniqueDigits = attempts.reduce((totalOfUniqueDigits, attempt) =>
-  totalOfUniqueDigits + attempt.outputs.filter(output => [2/*1*/, 3/*7*/, 4/*4*/, 7/*8*/].includes(output.length)).length
+  totalOfUniqueDigits + attempt.outputs.filter(output => [2/* 1 */, 3/* 7 */, 4/* 4 */, 7/* 8 */].includes(output.length)).length
 , 0)
 console.log('Part 1 :', uniqueDigits)
 
 const sumOfNumbers = attempts.reduce((sum, { digits, outputs }) => {
-  const allDigits = [...digits, ...outputs ]
+  const allDigits = [...digits, ...outputs]
   const segmentsOf1 = allDigits.filter(segments => segments.length === 2)[0]
   const segmentsOf7 = allDigits.filter(segments => segments.length === 3)[0]
   const segmentsOf4 = allDigits.filter(segments => segments.length === 4)[0]
 
   /* Based on the 1 = ab, 7 = abd and 4 = abef, we know the following :
-   * 
-   *   dddd                    dddd 
+   *
+   *   dddd                    dddd
    * e/f  a/b                e/f  a/b
    * e/f  a/b                e/f  a/b
-   *    e/f    which means :    e/f  
+   *    e/f    which means :    e/f
    *  .   a/b                c/g  a/b
    *  .   a/b                c/g  a/b
-   *   ....                     c/g 
-   * 
+   *   ....                     c/g
+   *
    * Then using frequency analysis, we can distinguish them
    */
 
   const segmentsFrequencies = buildSegmentsFrequencies(digits)
   const segmentsMapping = segmentsFrequencies.reduce((mapping, frequency, index) => {
     if (frequency === 6) {
-      mapping[String.fromCharCode(97/*a*/ + index)] = 'b'
+      mapping[String.fromCharCode(asciiOfa + index)] = 'b'
     } else if (frequency === 4) {
-      mapping[String.fromCharCode(97/*a*/ + index)] = 'e'
+      mapping[String.fromCharCode(asciiOfa + index)] = 'e'
     } else if (frequency === 9) {
-      mapping[String.fromCharCode(97/*a*/ + index)] = 'f'
+      mapping[String.fromCharCode(asciiOfa + index)] = 'f'
     }
     return mapping
   }, {})
