@@ -1,9 +1,7 @@
-const input = require('./input')
-  .split(/\r?\n/)
-  .filter(line => !!line)
+const { lines } = require('../input')
 
 const grid = []
-input.forEach(line => {
+lines.forEach(line => {
   grid.push(line.split('').map(n => parseInt(n, 10)))
 })
 const width = grid[0].length

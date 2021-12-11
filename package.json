@@ -1,20 +1,20 @@
 {
-  "name": "adventofcode2021",
+  "name": "adventofcode",
   "version": "1.0.0",
-  "description": "https://adventofcode.com/2021",
+  "description": "https://adventofcode.com",
   "scripts": {
     "lint": "standard --fix"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ArnaudBuchholz/AdventOfCode2021.git"
+    "url": "https://github.com/ArnaudBuchholz/AdventOfCode.git"
   },
   "author": "Arnaud Buchholz",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ArnaudBuchholz/AdventOfCode2021/issues"
+    "url": "https://github.com/ArnaudBuchholz/AdventOfCode/issues"
   },
-  "homepage": "https://github.com/ArnaudBuchholz/AdventOfCode2021#readme",
+  "homepage": "https://github.com/ArnaudBuchholz/AdventOfCode#readme",
   "dependencies": {
     "standard": "^16.0.4"
   }

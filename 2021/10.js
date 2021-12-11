@@ -1,7 +1,5 @@
 const assert = require('assert')
-const input = require('./input')
-  .split(/\r?\n/)
-  .filter(line => !!line)
+const { lines } = require('../input')
 
 const openings = ['(', '[', '{', '<']
 const closings = [')', ']', '}', '>']
@@ -63,7 +61,7 @@ assert.deepEqual(parse('<{}(}>[(){<>}]'), { index: 4, char: '}' })
 assert.deepEqual(parse('['), { index: 1, char: undefined, missing: [']'] })
 assert.deepEqual(parse('[{[{({})'), { index: 8, char: undefined, missing: ['}', ']', '}', ']'] })
 
-const syntaxErrorScore = input.reduce((sum, line) => {
+const syntaxErrorScore = lines.reduce((sum, line) => {
   const parsed = parse(line)
   if (parsed && parsed.char) {
     return sum + syntaxErrorPoints[parsed.char]
@@ -72,7 +70,7 @@ const syntaxErrorScore = input.reduce((sum, line) => {
 }, 0)
 console.log('Part 1 :', syntaxErrorScore)
 
-const completionStringsScore = input
+const completionStringsScore = lines
   .map(line => {
     const parsed = parse(line)
     if (parsed.missing) {

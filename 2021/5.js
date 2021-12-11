@@ -1,4 +1,4 @@
-const input = require('./input')
+const { lines } = require('../input')
 
 const grid = []
 
@@ -50,9 +50,7 @@ function overlap () {
 }
 
 function draw (includeDiagonals) {
-  input
-    .split('\n')
-    .filter(line => !!line)
+  lines
     .forEach(line => {
       const match = line.match(/(\d+),(\d+) -> (\d+),(\d+)/).slice(1)
       const [x0, y0, x1, y1] = match.map(n => parseInt(n, 10))

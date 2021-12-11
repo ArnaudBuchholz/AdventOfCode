@@ -1,5 +1,4 @@
-const input = require('./input')
-const report = input.split('\n')
+const { lines: report } = require('../input')
 
 const numberOfBits = report[0].length
 const bitsCounts = report.reduce((state, [...bits]) => {

@@ -1,6 +1,5 @@
-const input = require('./input')
-
-const positions = input.split('\n')[0].split(',').map(n => parseInt(n, 10))
+const { lines } = require('../input')
+const positions = lines[0].split(',').map(n => parseInt(n, 10))
 
 const { min, max } = positions.reduce(({ min, max }, position) => {
   min = Math.min(position, min)

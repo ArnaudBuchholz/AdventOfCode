@@ -1,8 +1,6 @@
-const input = require('./input')
+const { lines } = require('../input')
 
-const attempts = input
-  .split(/\r?\n/)
-  .filter(line => !!line)
+const attempts = lines
   .map(line => {
     const [uniqueSignalPatterns, fourDigitOutputValue] = line.split(' | ')
     const digits = uniqueSignalPatterns.split(' ')

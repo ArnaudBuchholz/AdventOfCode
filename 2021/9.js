@@ -1,15 +1,12 @@
-const input = require('./input')
-  .split(/\r?\n/)
-  .filter(line => !!line)
-
-const width = input[0].length
-const height = input.length
+const { lines } = require('../input')
+const width = lines[0].length
+const height = lines.length
 
 function get (x, y) {
   if (x < 0 || x >= width || y < 0 || y >= height) {
     return 10
   }
-  return parseInt(input[y][x], 10)
+  return parseInt(lines[y][x], 10)
 }
 
 function isLow (x, y) {

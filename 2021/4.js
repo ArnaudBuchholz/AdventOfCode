@@ -1,7 +1,6 @@
-const input = require('./input')
+const { input, lines } = require('../input')
 const toNumber = n => parseInt(n, 10)
-
-const numbers = input.split('\n')[0].split(',').map(toNumber)
+const numbers = lines[0].split(',').map(toNumber)
 
 class Grid {
   constructor (numbers) {
