@@ -6,15 +6,18 @@ const [year, day] = relative(__dirname, script).split(sep)
 const folder = additional === '-sample' ? 'sample' : 'input'
 const fileName = join(__dirname, year, folder, `${day}.txt`)
 
+const int = n => parseInt(n, 10)
+
 try {
   access(fileName)
   const input = readFile(fileName).toString()
   const lines = input.split(/\r?\n/).filter(line => !!line.trim())
-  const numbers = lines.map(n => parseInt(n, 10))
+  const numbers = lines.map(int)
   module.exports = {
     input,
     lines,
-    numbers
+    numbers,
+    int
   }
 } catch (e) {
   console.error(`Missing ${folder} for day #${day}`)
