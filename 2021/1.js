@@ -1,4 +1,4 @@
-const { numbers: depths } = require('../input')
+const { numbers: depths } = require('../lib')
 
 function getIncreaseCount (array) {
   const { count } = array.reduce(({ last, count }, depth) => {

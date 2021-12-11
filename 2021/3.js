@@ -1,4 +1,4 @@
-const { lines: report } = require('../input')
+const { lines: report } = require('../lib')
 
 const numberOfBits = report[0].length
 const bitsCounts = report.reduce((state, [...bits]) => {

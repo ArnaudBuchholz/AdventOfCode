@@ -1,4 +1,4 @@
-const { lines } = require('../input')
+const { lines } = require('../lib')
 
 const attempts = lines
   .map(line => {

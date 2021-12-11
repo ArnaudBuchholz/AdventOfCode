@@ -1,8 +1,8 @@
-const { lines } = require('../input')
+const { lines, int } = require('../lib')
 
 const grid = []
 lines.forEach(line => {
-  grid.push(line.split('').map(n => parseInt(n, 10)))
+  grid.push(line.split('').map(int))
 })
 const width = grid[0].length
 const height = grid.length

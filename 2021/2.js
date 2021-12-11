@@ -1,4 +1,4 @@
-const { lines: moves } = require('../input')
+const { lines: moves } = require('../lib')
 
 const part1 = moves.reduce(({ depth, position }, move) => {
   const [command, arg] = move.split(' ')

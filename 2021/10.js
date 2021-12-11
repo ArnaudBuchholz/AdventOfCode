@@ -1,5 +1,5 @@
 const assert = require('assert')
-const { lines } = require('../input')
+const { lines } = require('../lib')
 
 const openings = ['(', '[', '{', '<']
 const closings = [')', ']', '}', '>']

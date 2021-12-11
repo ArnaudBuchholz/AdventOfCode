@@ -1,5 +1,5 @@
-const { lines } = require('../input')
-const ages = lines[0].split(',').map(n => parseInt(n, 10))
+const { lines, int } = require('../lib')
+const ages = lines[0].split(',').map(int)
 
 function inc (array, index, offset) {
   array[index] = (array[index] ?? 0) + offset
