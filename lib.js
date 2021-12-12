@@ -3,8 +3,9 @@ const { join, relative, sep } = require('path')
 
 const [, script, additional] = process.argv
 const [year, day] = relative(__dirname, script).split(sep)
-const folder = additional === '-sample' ? 'sample' : 'input'
-const fileName = join(__dirname, year, folder, `${day}.txt`)
+const folder = additional && additional.startsWith('-sample') ? 'sample' : 'input'
+const sampleIndex = (/-sample(\d)/.exec(additional) || [])[1]
+const fileName = join(__dirname, year, folder, `${day}${sampleIndex ? '.' + sampleIndex : ''}.txt`)
 
 const int = n => parseInt(n, 10)
 
