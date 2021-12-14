@@ -1,0 +1,8 @@
+[flake8]
+indent-size = 2
+per-file-ignores =
+  lib.py:F401
+builtins =
+  math,
+  lines,
+  numbers
