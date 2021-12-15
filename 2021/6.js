@@ -1,5 +1,5 @@
-const { lines, int } = require('../lib')
-const ages = lines[0].split(',').map(int)
+const { lines } = require('../lib')
+const ages = lines[0].split(',').map(Number)
 
 function inc (array, index, offset) {
   array[index] = (array[index] ?? 0) + offset
