@@ -1,8 +1,8 @@
-const { lines, int } = require('../lib')
+const { lines } = require('../lib')
 
 const grid = []
 lines.forEach(line => {
-  grid.push(line.split('').map(int))
+  grid.push(line.split('').map(Number))
 })
 const width = grid[0].length
 const height = grid.length
