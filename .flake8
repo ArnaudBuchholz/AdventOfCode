@@ -6,4 +6,5 @@ per-file-ignores =
 builtins =
   math,
   lines,
-  numbers
+  numbers,
+  re
