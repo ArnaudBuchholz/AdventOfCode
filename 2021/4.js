@@ -1,5 +1,5 @@
-const { input, lines, int } = require('../lib')
-const numbers = lines[0].split(',').map(int)
+const { input, lines } = require('../lib')
+const numbers = lines[0].split(',').map(Number)
 
 class Grid {
   constructor (numbers) {
@@ -33,7 +33,7 @@ class Grid {
   sumOfUnmarked () {
     return Object.keys(this._numbers)
       .filter(number => !this._numbers[number].marked)
-      .map(int)
+      .map(Number)
       .reduce((sum, number) => sum + number, 0)
   }
 
@@ -75,7 +75,7 @@ class Grid {
 
 const grids = []
 input.replace(/(?: ?\d+\s+\d+\s+\d+\s+\d+\s+\d+(?:\r?\n|$)){5}/g, gridNumbersText => {
-  const gridNumbers = gridNumbersText.split(/\s+/).filter(c => !!c).map(int)
+  const gridNumbers = gridNumbersText.split(/\s+/).filter(c => !!c).map(Number)
   grids.push(new Grid(gridNumbers))
 })
 
