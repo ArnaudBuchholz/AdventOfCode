@@ -1,5 +1,5 @@
-const { lines, int } = require('../lib')
-const positions = lines[0].split(',').map(int)
+const { lines } = require('../lib')
+const positions = lines[0].split(',').map(Number)
 
 const { min, max } = positions.reduce(({ min, max }, position) => {
   min = Math.min(position, min)
