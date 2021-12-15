@@ -1,4 +1,4 @@
-const { lines, int } = require('../lib')
+const { lines } = require('../lib')
 const verbose = process.argv.includes('-verbose')
 const grid = []
 
@@ -31,7 +31,7 @@ lines
   .forEach(line => {
     const foldingInstructions = /fold along (x|y)=(\d+)/.exec(line)
     if (foldingInstructions) {
-      const position = int(foldingInstructions[2])
+      const position = Number(foldingInstructions[2])
       if (foldingInstructions[1] === 'x') {
         grid.forEach(row => {
           row.forEach((flag, x) => {
@@ -57,7 +57,7 @@ lines
       }
       console.log('Fold on', foldingInstructions[1], ':', position, '=', count())
     } else {
-      const [x, y] = line.split(',').map(int)
+      const [x, y] = line.split(',').map(Number)
       if (!grid[y]) {
         grid[y] = []
       }
