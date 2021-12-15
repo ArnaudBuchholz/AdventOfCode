@@ -1,4 +1,4 @@
-const { lines, int } = require('../lib')
+const { lines } = require('../lib')
 const width = lines[0].length
 const height = lines.length
 
@@ -6,7 +6,7 @@ function get (x, y) {
   if (x < 0 || x >= width || y < 0 || y >= height) {
     return 10
   }
-  return int(lines[y][x])
+  return Number(lines[y][x])
 }
 
 function isLow (x, y) {
