@@ -1,124 +1,156 @@
-def exec(memory, verbose, inputs=[]):
-  input_index = 0
-  position = 0
-  outputs = []
+INTOCODE_NOT_RUNNING = 0
+INTCODE_HALTED = 99
+INTCODE_ERROR = 100
+INTCODE_WAITING_FOR_INPUT = 3
 
-  def getParameter(offset, mode):
+
+class IntCode:
+  def __init__(self, memory):
+    self.__memory = memory
+    self.__position = 0
+    self.__state = INTOCODE_NOT_RUNNING
+    self.__verbose = False
+    self.__inputs = []
+    self.__outputs = []
+
+  def state(self):
+    return self.__state
+
+  def verbose(self, verbose):
+    self.__verbose = verbose
+
+  def inputs(self, inputs):
+    self.__inputs = inputs
+
+  def outputs(self):
+    return self.__outputs
+
+  def __getParameter(self, offset, mode):
     if mode == 0:
-      pos_of_value = memory[position + offset]
-      value = memory[pos_of_value]
+      pos_of_value = self.__memory[self.__position + offset]
+      value = self.__memory[pos_of_value]
       return (value, '@{}:{}'.format(pos_of_value, value))
-    value = memory[position + offset]
+    value = self.__memory[self.__position + offset]
     return (value, str(value))
 
-  while True:
-    instruction = memory[position]
-    opcode = instruction % 100
-    param1_mode = int(instruction // 100 % 10)
-    param2_mode = int(instruction // 1000 % 10)
-    param3_mode = int(instruction // 10000 % 10)
+  def run(self):
+    while True:
+      instruction = self.__memory[self.__position]
+      opcode = instruction % 100
+      param1_mode = int(instruction // 100 % 10)
+      param2_mode = int(instruction // 1000 % 10)
+      param3_mode = int(instruction // 10000 % 10)
 
-    if opcode == 1:
-      a, label_of_a = getParameter(1, param1_mode)
-      b, label_of_b = getParameter(2, param2_mode)
-      assert param3_mode == 0
-      pos_of_c = memory[position + 3]
-      c = a + b
-      if verbose:
-        print('add', label_of_a, '+', label_of_b, '=', '@' + str(pos_of_c), c)
-      memory[pos_of_c] = c
-      position += 4
+      if opcode == 1:  # ADD
+        a, label_of_a = self.__getParameter(1, param1_mode)
+        b, label_of_b = self.__getParameter(2, param2_mode)
+        assert param3_mode == 0
+        pos_of_c = self.__memory[self.__position + 3]
+        c = a + b
+        if self.__verbose:
+          print('ADD', label_of_a, '+', label_of_b,
+                '=', '@' + str(pos_of_c), c)
+        self.__memory[pos_of_c] = c
+        self.__position += 4
 
-    elif opcode == 2:
-      a, label_of_a = getParameter(1, param1_mode)
-      b, label_of_b = getParameter(2, param2_mode)
-      assert param3_mode == 0
-      pos_of_c = memory[position + 3]
-      c = a * b
-      if verbose:
-        print('mul', label_of_a, '*', label_of_b, '=', '@' + str(pos_of_c), c)
-      memory[pos_of_c] = c
-      position += 4
+      elif opcode == 2:  # MUL
+        a, label_of_a = self.__getParameter(1, param1_mode)
+        b, label_of_b = self.__getParameter(2, param2_mode)
+        assert param3_mode == 0
+        pos_of_c = self.__memory[self.__position + 3]
+        c = a * b
+        if self.__verbose:
+          print('MUL', label_of_a, '*', label_of_b,
+                '=', '@' + str(pos_of_c), c)
+        self.__memory[pos_of_c] = c
+        self.__position += 4
 
-    elif opcode == 3:
-      assert param1_mode == 0
-      pos_of_input = memory[position + 1]
-      if input_index < len(inputs):
-        if verbose:
-          print('input', '@' + str(pos_of_input))
-        str_value = inputs[input_index]
-        input_index = input_index + 1
+      elif opcode == 3:  # INPUT
+        assert param1_mode == 0
+        pos_of_input = self.__memory[self.__position + 1]
+        if self.__verbose:
+          print('INPUT', '@' + str(pos_of_input))
+        if len(self.__inputs) == 0:
+          self.__state = INTCODE_WAITING_FOR_INPUT
+          break
+        str_value = self.__inputs[0]
+        del self.__inputs[0]
+        self.__memory[pos_of_input] = int(str_value)
+        self.__position += 2
+
+      elif opcode == 4:  # OUTPUT
+        # if param1_mode != 0:
+        #   print('Suprise :', instruction)
+        # assert param1_mode == 0
+        pos_of_output = self.__memory[self.__position + 1]
+        if self.__verbose:
+          print('output', '@' + str(pos_of_output))
+        value = self.__memory[pos_of_output]
+        self.__outputs.append(value)
+        self.__position += 2
+
+      elif opcode == 5:  # JUMP-IF-TRUE
+        condition, label_of_condition = self.__getParameter(1, param1_mode)
+        offset, label_of_offset = self.__getParameter(2, param2_mode)
+        if self.__verbose:
+          print('JUMP-IF-TRUE', label_of_condition, '? ->', label_of_offset)
+        if condition != 0:
+          self.__position = offset
+        else:
+          self.__position += 3
+
+      elif opcode == 6:  # JUMP-IF-FALSE
+        condition, label_of_condition = self.__getParameter(1, param1_mode)
+        offset, label_of_offset = self.__getParameter(2, param2_mode)
+        if self.__verbose:
+          print('JUMP-IF-FALSE', label_of_condition, '? ->', label_of_offset)
+        if condition == 0:
+          self.__position = offset
+        else:
+          self.__position += 3
+
+      elif opcode == 7:  # LESS-THAN
+        a, label_of_a = self.__getParameter(1, param1_mode)
+        b, label_of_b = self.__getParameter(2, param2_mode)
+        assert param3_mode == 0
+        pos_of_c = self.__memory[self.__position + 3]
+        if self.__verbose:
+          print('LESS-THAN', label_of_a, '<', label_of_b,
+                '? ->', '@' + str(pos_of_c))
+        if a < b:
+          self.__memory[pos_of_c] = 1
+        else:
+          self.__memory[pos_of_c] = 0
+        self.__position += 4
+
+      elif opcode == 8:  # EQUAL
+        a, label_of_a = self.__getParameter(1, param1_mode)
+        b, label_of_b = self.__getParameter(2, param2_mode)
+        assert param3_mode == 0
+        pos_of_c = self.__memory[self.__position + 3]
+        if self.__verbose:
+          print('EQUAL', label_of_a, '==', label_of_b,
+                '? ->', '@' + str(pos_of_c))
+        if a == b:
+          self.__memory[pos_of_c] = 1
+        else:
+          self.__memory[pos_of_c] = 0
+        self.__position += 4
+
+      elif opcode == 99:  # HALT
+        self.__state = INTCODE_HALTED
+        break
+
       else:
-        print('input', '@' + str(pos_of_input))
-        str_value = input()
-      memory[pos_of_input] = int(str_value)
-      position += 2
+        self.__state = INTCODE_ERROR
+        print('unknown',
+              '@{}:{}'.format(self.__position, self.__memory[self.__position]))
+        break
 
-    elif opcode == 4:
-      # if param1_mode != 0:
-      #   print('Suprise :', instruction)
-      # assert param1_mode == 0
-      pos_of_output = memory[position + 1]
-      if verbose:
-        print('output', '@' + str(pos_of_output))
-      value = memory[pos_of_output]
-      print(value)
-      outputs = [*outputs, value]
-      position += 2
 
-    elif opcode == 5:
-      condition, label_of_condition = getParameter(1, param1_mode)
-      offset, label_of_offset = getParameter(2, param2_mode)
-      if verbose:
-        print('jump-if-true', label_of_condition, '? ->', label_of_offset)
-      if condition != 0:
-        position = offset
-      else:
-        position += 3
-
-    elif opcode == 6:
-      condition, label_of_condition = getParameter(1, param1_mode)
-      offset, label_of_offset = getParameter(2, param2_mode)
-      if verbose:
-        print('jump-if-false', label_of_condition, '? ->', label_of_offset)
-      if condition == 0:
-        position = offset
-      else:
-        position += 3
-
-    elif opcode == 7:
-      a, label_of_a = getParameter(1, param1_mode)
-      b, label_of_b = getParameter(2, param2_mode)
-      assert param3_mode == 0
-      pos_of_c = memory[position + 3]
-      if verbose:
-        print('less-than', label_of_a, '<', label_of_b,
-              '? ->', '@' + str(pos_of_c))
-      if a < b:
-        memory[pos_of_c] = 1
-      else:
-        memory[pos_of_c] = 0
-      position += 4
-
-    elif opcode == 8:
-      a, label_of_a = getParameter(1, param1_mode)
-      b, label_of_b = getParameter(2, param2_mode)
-      assert param3_mode == 0
-      pos_of_c = memory[position + 3]
-      if verbose:
-        print('equal', label_of_a, '==', label_of_b,
-              '? ->', '@' + str(pos_of_c))
-      if a == b:
-        memory[pos_of_c] = 1
-      else:
-        memory[pos_of_c] = 0
-      position += 4
-
-    elif opcode == 99:
-      break
-
-    else:
-      print('unknown', '@{}:{}'.format(position, memory[position]))
-      break
-
-  return outputs
+def exec(memory, verbose, inputs=[]):
+  intcode = IntCode(memory)
+  intcode.verbose(verbose)
+  intcode.inputs(inputs)
+  intcode.run()
+  return intcode.outputs()
