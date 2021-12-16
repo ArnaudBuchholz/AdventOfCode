@@ -1,3 +1,6 @@
+import re
+from lib import lines
+
 start_end = re.compile(r'(\d+)-(\d+)')
 start, end = [*map(int, start_end.search(lines[0]).groups())]
 
