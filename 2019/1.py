@@ -1,3 +1,7 @@
+import math
+from lib import numbers
+
+
 def fuel_per_mass(x):
   return max(math.floor(x / 3) - 2, 0)
 
