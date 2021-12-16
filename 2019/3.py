@@ -1,3 +1,5 @@
+from lib import lines
+
 VERTICAL = 0
 HORIZONTAL = 1
 
