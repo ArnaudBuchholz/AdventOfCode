@@ -1,33 +1,134 @@
+const assert = require('assert')
 const { lines } = require('../lib')
 const verbose = process.argv.includes('-verbose')
 
-// Found a program generating them ;-)
-const rotations = [
-  'x,y,z',
-  'x,-z,y',
-  'z,y,-x',
-  'x,-y,-z',
-  'y,-z,-x',
-  'z,x,y',
-  '-x,y,-z',
-  'x,z,-y',
-  '-z,-y,-x',
-  'y,x,-z',
-  '-x,-z,-y',
-  'z,-y,x',
-  '-x,z,y',
-  '-z,y,x',
-  '-y,z,-x',
-  '-z,x,-y',
-  '-x,-y,z',
-  'y,z,x',
-  '-y,-z,x',
-  'z,-x,-y',
-  '-z,-x,y',
-  '-y,x,z',
-  'y,-x,z',
-  '-y,-x,-z'
-]
+// https://www.euclideanspace.com/maths/algebra/matrix/transforms/examples/index.htm
+const rotationMatrixes = `
+1	0	0
+0	1	0
+0	0	1
+
+0	0	1
+0	1	0
+-1	0	0
+
+-1	0	0
+0	1	0
+0	0	-1
+
+0	0	-1
+0	1	0
+1	0	0
+
+0	-1	0
+1	0	0
+0	0	1
+
+0	0	1
+1	0	0
+0	1	0
+
+0	1	0
+1	0	0
+0	0	-1
+
+0	0	-1
+1	0	0
+0	-1	0
+
+0	1	0
+-1	0	0
+0	0	1
+
+0	0	1
+-1	0	0
+0	-1	0
+
+0	-1	0
+-1	0	0
+0	0	-1
+
+0	0	-1
+-1	0	0
+0	1	0
+
+1	0	0
+0	0	-1
+0	1	0
+
+0	1	0
+0	0	-1
+-1	0	0
+
+-1	0	0
+0	0	-1
+0	-1	0
+
+0	-1	0
+0	0	-1
+1	0	0
+
+1	0	0
+0	-1	0
+0	0	-1
+
+0	0	-1
+0	-1	0
+-1	0	0
+
+-1	0	0
+0	-1	0
+0	0	1
+
+0	0	1
+0	-1	0
+1	0	0
+
+1	0	0
+0	0	1
+0	-1	0
+
+0	-1	0
+0	0	1
+-1	0	0
+
+-1	0	0
+0	0	1
+0	1	0
+
+0	1	0
+0	0	1
+1	0	0
+`
+
+const rotations = []
+
+rotationMatrixes.replace(/(-?\d)\s*(-?\d)\s*(-?\d)\n(-?\d)\s*(-?\d)\s*(-?\d)\n(-?\d)\s*(-?\d)\s*(-?\d)/g, (...match) => {
+  const coords = [0,0,0]
+  coords.forEach((_, index) => {
+    if (match[3 * index + 1] === '1') {
+      coords[index] = 'x'
+    } else if (match[3 * index + 1] === '-1') {
+      coords[index] = '-x'
+    } else if (match[3 * index + 2] === '1') {
+      coords[index] = 'y'
+    } else if (match[3 * index + 2] === '-1') {
+      coords[index] = '-y'
+    } else if (match[3 * index + 3] === '1') {
+      coords[index] = 'z'
+    } else if (match[3 * index + 3] === '-1') {
+      coords[index] = '-z'
+    }
+  })
+  const rotation = coords.join(',')
+  if (verbose) {
+    console.log(rotation, '\n', match[0])
+  }
+  assert.strictEqual(rotations.includes(rotation), false)
+  rotations.push(rotation)
+})
+
+assert.strictEqual(rotations.length, 24)
 
 const scanners = []
 lines
@@ -59,7 +160,7 @@ scanners.every((scannerA, indexOfA) => {
   const beaconsA = [...scannerA].sort(order)
 
   scanners.every((scannerB, indexOfB) => {
-    if (indexOfA >= indexOfB) {
+    if (indexOfA === indexOfB) {
       return true // next
     }
 
