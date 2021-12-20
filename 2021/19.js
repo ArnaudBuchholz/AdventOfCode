@@ -159,11 +159,11 @@ function order ({ x1, y1, z1 }, { x2, y2, z2 }) {
   return x2 - x1
 }
 
-const allBeacons = [ ...scanners[0].detected ]
+const allBeacons = [...scanners[0].detected]
 scanners.shift()
 
 function addBeacon ({ x, y, z }) {
-  if (!allBeacons.some(({ ax, ay, az}) => (ax === x) && (ay === y) && (az === z))) {
+  if (!allBeacons.some(({ ax, ay, az }) => (ax === x) && (ay === y) && (az === z))) {
     allBeacons.push({ x, y, z })
   }
 }
@@ -211,13 +211,13 @@ while (scannerLocated < scanners.length) {
             y: ry + offsetY,
             z: rz + offsetZ
           }
-        });
+        })
 
         const matching = translatedAndRotatedBeacons.filter(({ x, y, z }) => {
           return allBeacons.some(({ x: ax, y: ay, z: az }) => {
             return ax === x && ay === y && az === z
           })
-        });
+        })
 
         if (matching.length >= 12) {
           scanner.rotation = rotation
