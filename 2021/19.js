@@ -135,10 +135,15 @@ lines
   .filter(line => !!line)
   .forEach(line => {
     if (line.startsWith('---')) {
-      scanners.push([])
+      scanners.push({
+        index: scanners.length,
+        location: 0,
+        rotation: 0,
+        detected: []
+      })
     } else {
       const [, x, y, z] = line.match(/(-?\d+),(-?\d+),(-?\d+)/).map(Number)
-      scanners[scanners.length - 1].push({ x, y, z })
+      scanners[scanners.length - 1].detected.push({ x, y, z })
     }
   })
 
@@ -154,22 +159,28 @@ function order ({ x1, y1, z1 }, { x2, y2, z2 }) {
   return x2 - x1
 }
 
-// const beacons = [ ...scanners[0] ]
+const allBeacons = [ ...scanners[0].detected ]
+scanners.shift()
 
-scanners.every((scannerA, indexOfA) => {
-  const beaconsA = [...scannerA].sort(order)
+function addBeacon ({ x, y, z }) {
+  if (!allBeacons.some(({ ax, ay, az}) => (ax === x) && (ay === y) && (az === z))) {
+    allBeacons.push({ x, y, z })
+  }
+}
 
-  scanners.every((scannerB, indexOfB) => {
-    if (indexOfA === indexOfB) {
-      return true // next
+let scannerLocated = 0
+// while (scannerLocated < scanners.length) {
+  scanners.forEach((scanner, indexOfScanner) => {
+    if (scanner.location) {
+      return true
     }
 
     if (verbose) {
-      console.log('Scanner', indexOfA, '<-> Scanner', indexOfB)
+      console.log('Scanner', indexOfScanner + 1)
     }
 
     rotations.every(rotation => {
-      const beaconsB = scannerB.map(({ x, y, z }) => {
+      const rotatedBeacons = scanner.detected.map(({ x, y, z }) => {
         const coords = {
           x: x,
           '-x': -x,
@@ -185,43 +196,44 @@ scanners.every((scannerA, indexOfA) => {
         return { x: rotated[0], y: rotated[1], z: rotated[2] }
       }).sort(order)
 
-      const found = !beaconsA.every(({ x: rax, y: ray, z: raz }) => {
+      return !allBeacons.some(({ x: ax, y: ay, z: az }) => {
         // Assuming offset is constent, pick the first dot and compute it
-        const { x: rbx, y: rby, z: rbz } = beaconsB[0]
-        const offsetX = rax - rbx
-        const offsetY = ray - rby
-        const offsetZ = raz - rbz
+        const { x: rx, y: ry, z: rz } = rotatedBeacons[0]
+        const offsetX = ax - rx
+        const offsetY = ay - ry
+        const offsetZ = az - rz
 
-        const matching = beaconsB.filter(({ x: bx, y: by, z: bz }) => {
-          bx += offsetX
-          by += offsetY
-          bz += offsetZ
-          return beaconsA.some(({ x: ax, y: ay, z: az }) => {
-            return ax === bx && ay === by && az === bz
+        const translatedAndRotatedBeacons = rotatedBeacons.map(({ x: rx, y: ry, z: rz }) => {
+          return {
+            x: rx + offsetX,
+            y: ry + offsetY,
+            z: rz + offsetZ
+          }
+        });
+
+        const matching = translatedAndRotatedBeacons.filter(({ x, y, z }) => {
+          return allBeacons.some(({ x: ax, y: ay, z: az }) => {
+            return ax === x && ay === y && az === z
           })
-        })
+        });
+
         if (matching.length >= 12) {
-          console.log(indexOfA, indexOfB, rotation, { offsetX, offsetY, offsetZ }, matching.length)
-          scanners[indexOfB] = beaconsB.map(({ x, y, z }) => {
-            return {
-              x: x + offsetX,
-              y: y + offsetY,
-              z: z + offsetZ
-            }
-          })
+          scanner.rotation = rotation
+          scanner.location = { offsetX, offsetY, offsetZ }
+          console.log(scanner.index, scanner.rotation, scanner.location, matching.length)
+          translatedAndRotatedBeacons.forEach(coords => addBeacon(coords))
+          allBeacons.sort(order)
+          ++scannerLocated
+          return true
+        } else {
+          if (verbose && matching.length > 1) {
+            console.log(scanner.index, rotation, { offsetX, offsetY, offsetZ }, matching.length)
+          }
           return false
         }
-        if (verbose) {
-          console.log('\t', rotation, { offsetX, offsetY, offsetZ }, matching.length)
-        }
-        return true
       })
-
-      return !found
     })
-
-    return true
   })
+// }
 
-  return true
-})
+console.log('Step 1 :', allBeacons.length, allBeacons)
