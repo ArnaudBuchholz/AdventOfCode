@@ -169,7 +169,9 @@ function addBeacon ({ x, y, z }) {
 }
 
 let scannerLocated = 0
-// while (scannerLocated < scanners.length) {
+while (scannerLocated < scanners.length) {
+  const lastScannerLocated = scannerLocated
+
   scanners.forEach((scanner, indexOfScanner) => {
     if (scanner.location) {
       return true
@@ -226,7 +228,7 @@ let scannerLocated = 0
           ++scannerLocated
           return true
         } else {
-          if (verbose && matching.length > 1) {
+          if (verbose) {
             console.log(scanner.index, rotation, { offsetX, offsetY, offsetZ }, matching.length)
           }
           return false
@@ -234,6 +236,14 @@ let scannerLocated = 0
       })
     })
   })
-// }
 
-console.log('Step 1 :', allBeacons.length, allBeacons)
+  if (lastScannerLocated === scannerLocated) {
+    console.error('loop without new location, breaking')
+    break
+  }
+}
+
+console.log('Step 1 :', allBeacons.length)
+if (verbose) {
+  console.log(allBeacons)
+}
