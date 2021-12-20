@@ -149,21 +149,11 @@ lines
 
 // console.log(scanners)
 
-function order ({ x1, y1, z1 }, { x2, y2, z2 }) {
-  if (z2 !== z1) {
-    return z2 - z1
-  }
-  if (y2 !== y1) {
-    return y2 - y1
-  }
-  return x2 - x1
-}
-
 const allBeacons = [...scanners[0].detected]
 scanners.shift()
 
 function addBeacon ({ x, y, z }) {
-  if (!allBeacons.some(({ ax, ay, az }) => (ax === x) && (ay === y) && (az === z))) {
+  if (!allBeacons.some(({ x: ax, y: ay, z: az }) => (ax === x) && (ay === y) && (az === z))) {
     allBeacons.push({ x, y, z })
   }
 }
@@ -196,43 +186,42 @@ while (scannerLocated < scanners.length) {
           rotated[ri] = coords[r]
         })
         return { x: rotated[0], y: rotated[1], z: rotated[2] }
-      }).sort(order)
+      })
 
       return !allBeacons.some(({ x: ax, y: ay, z: az }) => {
-        // Assuming offset is constent, pick the first dot and compute it
-        const { x: rx, y: ry, z: rz } = rotatedBeacons[0]
-        const offsetX = ax - rx
-        const offsetY = ay - ry
-        const offsetZ = az - rz
+        return rotatedBeacons.some(({ x: rx, y: ry, z: rz }) => {
+          const offsetX = ax - rx
+          const offsetY = ay - ry
+          const offsetZ = az - rz
 
-        const translatedAndRotatedBeacons = rotatedBeacons.map(({ x: rx, y: ry, z: rz }) => {
-          return {
-            x: rx + offsetX,
-            y: ry + offsetY,
-            z: rz + offsetZ
-          }
-        })
-
-        const matching = translatedAndRotatedBeacons.filter(({ x, y, z }) => {
-          return allBeacons.some(({ x: ax, y: ay, z: az }) => {
-            return ax === x && ay === y && az === z
+          const translatedAndRotatedBeacons = rotatedBeacons.map(({ x: rx, y: ry, z: rz }) => {
+            return {
+              x: rx + offsetX,
+              y: ry + offsetY,
+              z: rz + offsetZ
+            }
           })
-        })
 
-        if (matching.length >= 12) {
-          scanner.rotation = rotation
-          scanner.location = { offsetX, offsetY, offsetZ }
-          console.log(scanner.index, scanner.rotation, scanner.location, matching.length)
-          translatedAndRotatedBeacons.forEach(coords => addBeacon(coords))
-          allBeacons.sort(order)
-          ++scannerLocated
-          return true
-        } else {
-          if (verbose) {
-            console.log(scanner.index, rotation, { offsetX, offsetY, offsetZ }, matching.length)
+          const matching = translatedAndRotatedBeacons.filter(({ x, y, z }) => {
+            return allBeacons.some(({ x: ax, y: ay, z: az }) => {
+              return (ax === x) && (ay === y) && (az === z)
+            })
+          })
+
+          if (matching.length >= 12) {
+            scanner.rotation = rotation
+            scanner.location = { offsetX, offsetY, offsetZ }
+            const beforeAllBeacons = [...allBeacons]
+            translatedAndRotatedBeacons.forEach(coords => addBeacon(coords))
+            console.log(scanner.index, scanner.rotation, scanner.location, matching.length, beforeAllBeacons.length, '->', allBeacons.length)
+            ++scannerLocated
+            return true
           }
+          // if (verbose) {
+          //   console.log(scanner.index, rotation, { offsetX, offsetY, offsetZ }, matching.length)
+          // }
           return false
-        }
+        })
       })
     })
   })
@@ -247,3 +236,18 @@ console.log('Step 1 :', allBeacons.length)
 if (verbose) {
   console.log(allBeacons)
 }
+
+let maxDistance = 0
+scanners.forEach((scannerA, indexA) => {
+  scanners.forEach((scannerB, indexB) => {
+    if (indexA === indexB) {
+      return
+    }
+    const distance = Math.abs(scannerB.location.offsetX - scannerA.location.offsetX) +
+                   Math.abs(scannerB.location.offsetY - scannerA.location.offsetY) +
+                   Math.abs(scannerB.location.offsetZ - scannerA.location.offsetZ)
+    maxDistance = Math.max(distance, maxDistance)
+  })
+})
+
+console.log('Step 2 :', maxDistance)
