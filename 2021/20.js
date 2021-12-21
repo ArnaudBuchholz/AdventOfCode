@@ -53,9 +53,9 @@ function enhance (from, pixels) {
   }
 
   const newImage = [...extendedFrom]
-  for (y = 0; y < height; ++y) {
+  for (let y = 0; y < height; ++y) {
     const row = newImage[y].split('')
-    for (x = 0; x < width; ++x) {
+    for (let x = 0; x < width; ++x) {
       const offset = pixels.reduce((value, [px, py]) => {
         const pixel = get(x + px, y + py)
         if (pixel === '#') {
