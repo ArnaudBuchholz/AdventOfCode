@@ -14,13 +14,12 @@ if (verbose) {
 }
 
 const step1 = [
-                [-1, -1], [0, -1], [1, -1],
-                [-1, 0],  [0, 0],  [1, 0],
-                [-1, 1],  [0, 1],  [1, 1],
-              ]
+  [-1, -1], [0, -1], [1, -1],
+  [-1, 0], [0, 0], [1, 0],
+  [-1, 1], [0, 1], [1, 1]
+]
 
-
-function enhance(from, pixels) {
+function enhance (from, pixels) {
   let width = from[0].length
   let height = from.length
   const buffer = Math.sqrt(pixels.length)
@@ -41,7 +40,7 @@ function enhance(from, pixels) {
   width += 2 * buffer
   height += 2 * buffer
 
-  function get(x, y) {
+  function get (x, y) {
     if (x < 0 || x >= width || y < 0 || y >= height) {
       return from.outer
     }
