@@ -3,43 +3,101 @@ const verbose = process.argv.includes('-verbose')
 
 const enhancement = lines[0]
 const image = lines.splice(1)
+image.outer = '.'
 
-console.log(image)
+function display (from) {
+  from.forEach(line => console.log(line))
+}
 
-const pixels = [
-                 [-1, -1], [0, -1], [1, -1],
-                 [-1, 0],  [0, 0],  [1, 0],
-                 [-1, 1],  [0, 1],  [1, 1],
-               ]
+if (verbose) {
+  display(image)
+}
 
-function enhance(from, refPixels) {
-  const width = from[0].length
-  const height = from.length
+const step1 = [
+                [-1, -1], [0, -1], [1, -1],
+                [-1, 0],  [0, 0],  [1, 0],
+                [-1, 1],  [0, 1],  [1, 1],
+              ]
 
-  const extendedFrom = new Array(height + 2).fill(0)
-  extendedFrom[0] = ''.padStart(width + 2, '.')
-  for (let y = 0; y < height; ++y) {
-    extendedFrom[y + 1] = '.' + from[y] + '.'
+
+function enhance(from, pixels) {
+  let width = from[0].length
+  let height = from.length
+  const buffer = Math.sqrt(pixels.length)
+
+  const extendedFrom = new Array(height + 2 * buffer).fill(0)
+  const bufferLine = ''.padStart(width + 2 * buffer, from.outer)
+
+  for (let y = 0; y < height + 2 * buffer; ++y) {
+    if (y < buffer) {
+      extendedFrom[y] = bufferLine
+    } else if (y < buffer + height) {
+      extendedFrom[y] = ''.padStart(buffer, from.outer) + from[y - buffer] + ''.padStart(buffer, from.outer)
+    } else {
+      extendedFrom[y] = bufferLine
+    }
   }
-  extendedFrom[height + 1] = ''.padStart(width + 2, '.')
+
+  width += 2 * buffer
+  height += 2 * buffer
+
+  function get(x, y) {
+    if (x < 0 || x >= width || y < 0 || y >= height) {
+      return from.outer
+    }
+    return extendedFrom[y][x]
+  }
+
+  if (verbose) {
+    console.log('Before, with buffer, outer :', from.outer)
+    display(extendedFrom)
+  }
 
   const newImage = [...extendedFrom]
   for (y = 0; y < height; ++y) {
-    const row = newImage[y + 1].split('')
+    const row = newImage[y].split('')
     for (x = 0; x < width; ++x) {
-      const offset = refPixels.reduce((value, [px, py]) => {
-        const pixel = extendedFrom[y + 1 + py][x + 1 + px]
+      const offset = pixels.reduce((value, [px, py]) => {
+        const pixel = get(x + px, y + py)
         if (pixel === '#') {
           return 2 * value + 1
         }
         return 2 * value
       }, 0)
-      row[x + 1] = enhancement[offset]
+      row[x] = enhancement[offset]
     }
-    newImage[y + 1] = row.join('')
+    newImage[y] = row.join('')
   }
+
+  if (from.outer === '.') {
+    newImage.outer = enhancement[0]
+  } else {
+    newImage.outer = enhancement[511]
+  }
+
+  if (verbose) {
+    console.log('After, outer : ', newImage.outer)
+    display(newImage)
+  }
+
   return newImage
 }
 
-const step1 = enhance(image, pixels)
-console.log(step1)
+const image1 = enhance(image, step1)
+const image2 = enhance(image1, step1)
+
+const pixelsLitAfter2Steps = image2.reduce((total, row) =>
+  total + row.split('').filter(pixel => pixel === '#').length
+, 0)
+console.log('Step 1 :', pixelsLitAfter2Steps)
+
+let count = 48
+let nextImage = image2
+while (count--) {
+  nextImage = enhance(nextImage, step1)
+}
+
+const pixelsLitAfter50Steps = nextImage.reduce((total, row) =>
+  total + row.split('').filter(pixel => pixel === '#').length
+, 0)
+console.log('Step 2 :', pixelsLitAfter50Steps)
