@@ -59,21 +59,70 @@ console.log('Score 2 :', score2)
 
 console.log('Step 1 :', looserScore * lastThrow)
 
-/*
-
-let mvP1 = [initialP1, initialP1, initialP1]
-let mvScore1 = [0, 0, 0]
-
-let mvP2 = [initialP2, initialP2, initialP2]
-let mvScore2 = [0, 0, 0]
-
- * shot 1
- * p1 + 1, p1 + 2, p1 + 3
- * 
- * shot 2
- * p1 + 1 + 1, p1 + 1 + 2, p1 + 1 + 3, p1 + 2 + 1, p1 + 2 + 2, p1 + 2 + 3, p1 + 3 + 1, p1 + 3 + 2, p1 + 3 + 3
-
-while (true) {
-
+const gameStart = {
+  p1: initialP1,
+  score1: 0,
+  p2: initialP2,
+  score2: 0,
+  turn: true, // p1
+  mul: 1
 }
+
+const games = [gameStart]
+const wins = {
+  p1: 0,
+  p2: 0
+}
+
+let start = new Date()
+
+/*
+  With the 3 dices, we can get from 3 to 9
+  However, the number of times we get each is not the same
 */
+const frequencies = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+for (let die1 = 1; die1 < 4; ++die1) {
+  for (let die2 = 1; die2 < 4; ++die2) {
+    for (let die3 = 1; die3 < 4; ++die3) {
+      const sum = die1 + die2 + die3
+      ++frequencies[sum]
+    }
+  }
+}
+
+if (verbose) {
+  console.log('Frequencies :', frequencies)
+}
+
+while (games.length) {
+  const now = new Date()
+  if (verbose && (now - start) > 5000) {
+    console.log(games.length, wins)
+    start = now
+  }
+
+  const game = games.pop()
+  let p
+  let score
+  if (game.turn) {
+    p = 'p1'
+    score = 'score1'
+  } else {
+    p = 'p2'
+    score = 'score2'
+  }
+
+  for (let die = 3; die < 10; ++die) {
+    const nextGame = { ...game, turn: !game.turn }
+    nextGame[p] = adjustPos(nextGame[p] + die)
+    nextGame.mul *= frequencies[die]
+    nextGame[score] += nextGame[p]
+    if (nextGame[score] >= 21) {
+      wins[p] += nextGame.mul
+    } else {
+      games.push(nextGame)
+    }
+  }
+}
+
+console.log('Step 2 :', wins)
