@@ -86,6 +86,34 @@ if (verbose) {
 const cubesBuffer = new Int8Array(cubesBufferSize)
 cubesBuffer.fill(0)
 
+function volume (x, y, z, xOffset = 1, yOffset = 1, zOffset = 1) {
+  const xmin = xAxis[x]
+  const xmax = xAxis[x + 1]
+  const ymin = yAxis[y]
+  const ymax = yAxis[y + 1]
+  const zmin = zAxis[z]
+  const zmax = zAxis[z + 1]
+  return (xmax - xmin + xOffset) * (ymax - ymin + yOffset) * (zmax - zmin + zOffset)
+}
+
+function cubeOffset (x, y, z) {
+  const zOffset = (xAxis.length - 1) * (yAxis.length - 1) * z
+  const rowOffset = zOffset + (xAxis.length - 1) * y
+  return rowOffset + x
+}
+
+function testCube (x, y, z) {
+  if (z < 0 || z >= zAxis.length - 1 ||
+      y < 0 || y >= yAxis.length - 1 ||
+      x < 0 || x >= xAxis.length - 1
+  ) {
+    return false
+  }
+  return cubesBuffer[cubeOffset(x, y, z)] === 1
+}
+
+let step2Count = 0
+
 steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
   const cubeXmin = xAxis.indexOf(xmin)
   const cubeXmax = xAxis.indexOf(xmax)
@@ -101,59 +129,62 @@ steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
   }
 
   for (let z = cubeZmin; z < cubeZmax; ++z) {
-    const zOffset = (xAxis.length - 1) * (yAxis.length - 1) * z
-
     for (let y = cubeYmin; y < cubeYmax; ++y) {
-      const rowOffset = zOffset + (xAxis.length - 1) * y
-
       for (let x = cubeXmin; x < cubeXmax; ++x) {
-        const offset = rowOffset + x
-        cubesBuffer[offset] = on ? 1 : 0
+        const offset = cubeOffset(x, y, z)
+        if (on && cubesBuffer[offset] === 0) {
+          cubesBuffer[offset] = 1
+          let xOffset = 1
+          if (testCube(x + 1, y, z)) {
+            --xOffset
+          }
+          if (testCube(x - 1, y, z)) {
+            --xOffset
+          }
+          let yOffset = 1
+          if (testCube(x, y + 1, z)) {
+            --yOffset
+          }
+          if (testCube(x, y - 1, z)) {
+            --yOffset
+          }
+          let zOffset = 1
+          if (testCube(x, y, z + 1)) {
+            --zOffset
+          }
+          if (testCube(x, y, z - 1)) {
+            --zOffset
+          }
+          step2Count += volume(x, y, z, xOffset, yOffset, zOffset)
+        }
+        if (!on && cubesBuffer[offset] === 1) {
+          cubesBuffer[offset] = 0
+          let xOffset = 1
+          if (!testCube(x + 1, y, z)) {
+            --xOffset
+          }
+          if (!testCube(x - 1, y, z)) {
+            --xOffset
+          }
+          let yOffset = 1
+          if (!testCube(x, y + 1, z)) {
+            --yOffset
+          }
+          if (!testCube(x, y - 1, z)) {
+            --yOffset
+          }
+          let zOffset = 1
+          if (!testCube(x, y, z + 1)) {
+            --zOffset
+          }
+          if (!testCube(x, y, z - 1)) {
+            --zOffset
+          }
+          step2Count -= volume(x, y, z, xOffset, yOffset, zOffset)
+        }
       }
     }
   }
 })
-
-function volume (x, y, z, incMaxX = 1, incMaxY = 1, incMaxZ = 1) {
-  const xmin = xAxis[x]
-  const xmax = xAxis[x + 1]
-  const ymin = yAxis[y]
-  const ymax = yAxis[y + 1]
-  const zmin = zAxis[z]
-  const zmax = zAxis[z + 1]
-  return (xmax - xmin + incMaxX) * (ymax - ymin + incMaxY) * (zmax - zmin + incMaxZ)
-}
-
-function testCube (x, y, z) {
-  if (z >= zAxis.length - 1) {
-    return false
-  }
-  const zOffset = (xAxis.length - 1) * (yAxis.length - 1) * z
-  if (y >= yAxis.length - 1) {
-    return false
-  }
-  const rowOffset = zOffset + (xAxis.length - 1) * y
-  if (x >= xAxis.length - 1) {
-    return false
-  }
-  const offset = rowOffset + x
-  return cubesBuffer[offset] === 1
-}
-
-let step2Count = 0
-
-for (let z = 0; z < zAxis.length - 1; ++z) {
-  for (let y = 0; y < yAxis.length - 1; ++y) {
-    for (let x = 0; x < xAxis.length - 1; ++x) {
-      if (testCube(x, y, z)) {
-        step2Count += volume(x, y, z,
-          testCube(x + 1, y, z) ? 0 : 1,
-          testCube(x, y + 1, z) ? 0 : 1,
-          testCube(x, y, z + 1) ? 0 : 1
-        )
-      }
-    }
-  }
-}
 
 console.log('Step 2 :', step2Count)
