@@ -1,5 +1,16 @@
+const assert = require('assert')
 const { lines } = require('../lib')
 const verbose = process.argv.includes('-verbose')
+
+const steps = lines.map(line => {
+  const match = line.match(/(on|off) x=(-?\d+)..(-?\d+),y=(-?\d+)..(-?\d+),z=(-?\d+)..(-?\d+)/)
+  const on = match[1] === 'on'
+  const [xmin, xmax, ymin, ymax, zmin, zmax] = [].slice.call(match,2).map(Number)
+  if (verbose) {
+    console.log(on ? 'on' : 'off', 'x=', xmin, '..', xmax, ' y=', ymin, '..', ymax, ' z=', zmin, '..', zmax, ' ')
+  }
+  return { on, xmin, xmax, ymin, ymax, zmin, zmax }
+})
 
 const min = -50
 const max = 50
@@ -10,29 +21,9 @@ if (verbose) {
 }
 const buffer = new Int8Array(bufferSize)
 buffer.fill(0)
-let count = 0
+let step1Count = 0
 
-let globalZMin = 0
-let globalZMax = 0
-let globalYMin = 0
-let globalYMax = 0
-let globalXMin = 0
-let globalXMax = 0
-
-lines.forEach(line => {
-  const match = line.match(/(on|off) x=(-?\d+)..(-?\d+),y=(-?\d+)..(-?\d+),z=(-?\d+)..(-?\d+)/)
-  const on = match[1] === 'on'
-  const [xmin, xmax, ymin, ymax, zmin, zmax] = [].slice.call(match,2).map(Number)
-  if (verbose) {
-    console.log(on ? 'on' : 'off', 'x=', xmin, '..', xmax, ' y=', ymin, '..', ymax, ' z=', zmin, '..', zmax, ' ')
-  }
-
-  globalXMin = Math.min(xmin, globalXMin)
-  globalXMax = Math.max(xmax, globalXMax)
-  globalYMin = Math.min(ymin, globalYMin)
-  globalYMax = Math.max(ymax, globalYMax)
-  globalZMin = Math.min(zmin, globalZMin)
-  globalZMax = Math.max(zmax, globalZMax)
+steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
 
   for (let z = Math.max(zmin, min); z <= Math.min(zmax, max); ++z) {
     const zOffset = length * length * (z - min)
@@ -44,72 +35,66 @@ lines.forEach(line => {
         const offset = rowOffset + x - min
         if (on && buffer[offset] === 0) {
           buffer[offset] = 1
-          ++count
+          ++step1Count
         }
         if (!on && buffer[offset] === 1) {
           buffer[offset] = 0
-          --count
+          --step1Count
         }
       }
     }
   }
 })
 
-console.log('Step 1 :', count)
+console.log('Step 1 :', step1Count)
 
-const rangeX = globalXMax - globalXMin + 1
-const rangeY = globalYMax - globalYMin + 1
-const rangeZ = globalZMax - globalZMin + 1
+function axisIntersect (a, b, axis) {
+  const amin = a[`${axis}min`]
+  const amax = a[`${axis}max`]
+  const bmin = b[`${axis}min`]
+  const bmax = b[`${axis}max`]
+  if (bmin > amax) return null
+  if (bmax < amin) return null
 
-const rangeBufferSize = rangeZ * rangeY * rangeX
-
-if (verbose) {
-  console.log('x :', globalXMin, '..', globalXMax, ' ', rangeX)
-  console.log('y :', globalYMin, '..', globalYMax, ' ', rangeY)
-  console.log('z :', globalZMin, '..', globalZMax, ' ', rangeZ)
-  console.log('Range buffer size :', rangeBufferSize)
+  let min = Math.max(amin, bmin)
+  let max = Math.min(amax, bmax)
+  return { min, max }
 }
 
-const xIndexes = []
-const yIndexes = []
-const zIndexes = []
-
-lines.forEach(line => {
-  const match = line.match(/(on|off) x=(-?\d+)..(-?\d+),y=(-?\d+)..(-?\d+),z=(-?\d+)..(-?\d+)/)
-  const on = match[1] === 'on'
-  const [xmin, xmax, ymin, ymax, zmin, zmax] = [].slice.call(match,2).map(Number)
-  if (verbose) {
-    console.log(on ? 'on' : 'off', 'x=', xmin, '..', xmax, ' y=', ymin, '..', ymax, ' z=', zmin, '..', zmax, ' ')
+function intersect (a, b) {
+  const x = axisIntersect(a, b, 'x')
+  const y = axisIntersect(a, b, 'y')
+  const z = axisIntersect(a, b, 'z')
+  if (x === null || y === null || z === null) {
+    return null
   }
+  return { xmin: x.min, xmax: x.max, ymin: y.min, ymax: y.max, zmin: z.min, zmax: z.max }
+}
 
-  for (let z = zmin; z <= zmax; ++z) {
-    if (!zIndexes.includes(z)) {
-      zIndexes.push(z)
-    }
-  }
+function volume ({ xmin, xmax, ymin, ymax, zmin, zmax }) {
+  return (xmax - xmin + 1) * (ymax - ymin + 1) * (zmax - zmin + 1)
+}
 
-  for (let y = ymin; y <= ymax; ++y) {
-    if (!yIndexes.includes(y)) {
-      yIndexes.push(y)
-    }
-  }
+let step2Count = 0
 
-  for (let x = xmin; x <= xmax; ++x) {
-    if (!xIndexes.includes(x)) {
-      xIndexes.push(x)
-    }
+const on = []
+
+steps.forEach((step, index) => {
+/*
+  if (step.on) {
+    const points = volume(step)
+    on.forEach(cube => {
+      const common = intersect(step, cube)
+      if (common !== null) {
+        points -= volume(common)
+      }
+    })
+
+
+    step2Count += 
+
+
+
   }
+*/
 })
-
-const indexBufferSize = xIndexes.length * yIndexes.length * zIndexes.length
-
-if (verbose) {
-  console.log('x indexes :', xIndexes.length)
-  console.log('y indexes :', yIndexes.length)
-  console.log('z indexes :', zIndexes.length)
-  console.log('Index buffer size :', indexBufferSize)
-}
-
-const pageBufferSize = xIndexes.length * yIndexes.length
-const pageBuffers = zIndexes.map(_ => new Int8Array(pageBufferSize))
-  
