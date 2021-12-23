@@ -86,18 +86,6 @@ if (verbose) {
 const cubesBuffer = new Int8Array(cubesBufferSize)
 cubesBuffer.fill(0)
 
-function volume (x, y, z) {
-  const xmin = xAxis[x]
-  const xmax = xAxis[x + 1]
-  const ymin = yAxis[y]
-  const ymax = yAxis[y + 1]
-  const zmin = zAxis[z]
-  const zmax = zAxis[z + 1]
-  return (xmax - xmin + 1) * (ymax - ymin + 1) * (zmax - zmin + 1)
-}
-
-let step2Count = 0
-
 steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
   const cubeXmin = xAxis.indexOf(xmin)
   const cubeXmax = xAxis.indexOf(xmax)
@@ -120,17 +108,52 @@ steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
 
       for (let x = cubeXmin; x < cubeXmax; ++x) {
         const offset = rowOffset + x
-        if (on && cubesBuffer[offset] === 0) {
-          cubesBuffer[offset] = 1
-          step2Count += volume(x, y, z)
-        }
-        if (!on && cubesBuffer[offset] === 1) {
-          cubesBuffer[offset] = 0
-          step2Count -= volume(x, y, z)
-        }
+        cubesBuffer[offset] = on ? 1 : 0
       }
     }
   }
 })
+
+function volume (x, y, z, incMaxX = 1, incMaxY = 1, incMaxZ = 1) {
+  const xmin = xAxis[x]
+  const xmax = xAxis[x + 1]
+  const ymin = yAxis[y]
+  const ymax = yAxis[y + 1]
+  const zmin = zAxis[z]
+  const zmax = zAxis[z + 1]
+  return (xmax - xmin + incMaxX) * (ymax - ymin + incMaxY) * (zmax - zmin + incMaxZ)
+}
+
+function testCube (x, y, z) {
+  if (z >= zAxis.length - 1) {
+    return false
+  }
+  const zOffset = (xAxis.length - 1) * (yAxis.length - 1) * z
+  if (y >= yAxis.length - 1) {
+    return false
+  }
+  const rowOffset = zOffset + (xAxis.length - 1) * y
+  if (x >= xAxis.length - 1) {
+    return false
+  }
+  const offset = rowOffset + x
+  return cubesBuffer[offset] === 1
+}
+
+let step2Count = 0
+
+for (let z = 0; z < zAxis.length - 1; ++z) {
+  for (let y = 0; y < yAxis.length - 1; ++y) {
+    for (let x = 0; x < xAxis.length - 1; ++x) {
+      if (testCube(x, y, z)) {
+        step2Count += volume(x, y, z,
+          testCube(x + 1, y, z) ? 0 : 1,
+          testCube(x, y + 1, z) ? 0 : 1,
+          testCube(x, y, z + 1) ? 0 : 1
+        )
+      }
+    }
+  }
+}
 
 console.log('Step 2 :', step2Count)
