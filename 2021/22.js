@@ -172,14 +172,17 @@ steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
           const xOffset = 1 - setCubeBorder(x + 1, y, z, CUBE_XM1) - setCubeBorder(x - 1, y, z, CUBE_XP1)
           const yOffset = 1 - setCubeBorder(x, y + 1, z, CUBE_YM1) - setCubeBorder(x, y - 1, z, CUBE_YP1)
           const zOffset = 1 - setCubeBorder(x, y, z + 1, CUBE_ZM1) - setCubeBorder(x, y, z - 1, CUBE_ZP1)
-          step2Count += volume(x, y, z, xOffset, yOffset, zOffset)
+          const count = volume(x, y, z, xOffset, yOffset, zOffset)
+          // Remove share egdes
+          step2Count += count
         }
         if (!on && ((cubesBuffer[offset] & CUBE_CENTER) !== 0)) {
           cubesBuffer[offset] = 0
           const xOffset = 1 - clearCubeBorder(x + 1, y, z, CUBE_XM1) - clearCubeBorder(x - 1, y, z, CUBE_XP1)
           const yOffset = 1 - clearCubeBorder(x, y + 1, z, CUBE_YM1) - clearCubeBorder(x, y - 1, z, CUBE_YP1)
           const zOffset = 1 - clearCubeBorder(x, y, z + 1, CUBE_ZM1) - clearCubeBorder(x, y, z - 1, CUBE_ZP1)
-          step2Count -= volume(x, y, z, xOffset, yOffset, zOffset)
+          const count = volume(x, y, z, xOffset, yOffset, zOffset)
+          step2Count -= count
         }
       }
     }
