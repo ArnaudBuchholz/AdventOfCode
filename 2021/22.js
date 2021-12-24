@@ -1,15 +1,17 @@
 const { lines } = require('../lib')
 const verbose = process.argv.includes('-verbose')
 
-const steps = lines.map(line => {
-  const match = line.match(/(on|off) x=(-?\d+)..(-?\d+),y=(-?\d+)..(-?\d+),z=(-?\d+)..(-?\d+)/)
-  const on = match[1] === 'on'
-  const [xmin, xmax, ymin, ymax, zmin, zmax] = [].slice.call(match, 2).map(Number)
-  if (verbose) {
-    console.log(on ? 'on' : 'off', 'x=', xmin, '..', xmax, ' y=', ymin, '..', ymax, ' z=', zmin, '..', zmax)
-  }
-  return { on, xmin, xmax, ymin, ymax, zmin, zmax }
-})
+const steps = lines
+  .filter(line => !line.startsWith('#'))
+  .map(line => {
+    const match = line.match(/(on|off) x=(-?\d+)..(-?\d+),y=(-?\d+)..(-?\d+),z=(-?\d+)..(-?\d+)/)
+    const on = match[1] === 'on'
+    const [xmin, xmax, ymin, ymax, zmin, zmax] = [].slice.call(match, 2).map(Number)
+    if (verbose) {
+      console.log(on ? 'on' : 'off', 'x=', xmin, '..', xmax, ' y=', ymin, '..', ymax, ' z=', zmin, '..', zmax)
+    }
+    return { on, xmin, xmax, ymin, ymax, zmin, zmax }
+  })
 
 const min = -50
 const max = 50
@@ -86,6 +88,15 @@ if (verbose) {
 const cubesBuffer = new Int8Array(cubesBufferSize)
 cubesBuffer.fill(0)
 
+const CUBE_CENTER = 1
+const CUBE_XP1 = 2
+const CUBE_XM1 = 4
+const CUBE_YP1 = 8
+const CUBE_YM1 = 16
+const CUBE_ZP1 = 32
+const CUBE_ZM1 = 64
+const CUBE_ALL = CUBE_CENTER + CUBE_XP1 + CUBE_XM1 + CUBE_YP1 + CUBE_YM1 + CUBE_ZP1 + CUBE_ZM1
+
 function volume (x, y, z, xOffset = 1, yOffset = 1, zOffset = 1) {
   const xmin = xAxis[x]
   const xmax = xAxis[x + 1]
@@ -102,14 +113,38 @@ function cubeOffset (x, y, z) {
   return rowOffset + x
 }
 
-function testCube (x, y, z) {
+function secureCubeOffset (x, y, z) {
   if (z < 0 || z >= zAxis.length - 1 ||
-      y < 0 || y >= yAxis.length - 1 ||
-      x < 0 || x >= xAxis.length - 1
+    y < 0 || y >= yAxis.length - 1 ||
+    x < 0 || x >= xAxis.length - 1
   ) {
-    return false
+    return undefined
   }
-  return cubesBuffer[cubeOffset(x, y, z)] === 1
+  return cubeOffset(x, y, z)
+}
+
+function setCubeBorder (x, y, z, border) {
+  const offset = secureCubeOffset(x, y, z)
+  if (undefined === offset) {
+    return 0 // does not exist, should count
+  }
+  if ((cubesBuffer[offset] & border) === border) {
+    return 1 // already set, should not count
+  }
+  cubesBuffer[offset] |= border
+  return 0 // set, should count
+}
+
+function clearCubeBorder (x, y, z, border) {
+  const offset = secureCubeOffset(x, y, z)
+  if (undefined === offset) {
+    return 0 // does not exist, should count
+  }
+  if ((cubesBuffer[offset] & border) === 0) {
+    return 1 // already cleared, should not count
+  }
+  cubesBuffer[offset] &= ~border
+  return 0 // cleared, should count
 }
 
 let step2Count = 0
@@ -132,54 +167,18 @@ steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
     for (let y = cubeYmin; y < cubeYmax; ++y) {
       for (let x = cubeXmin; x < cubeXmax; ++x) {
         const offset = cubeOffset(x, y, z)
-        if (on && cubesBuffer[offset] === 0) {
-          cubesBuffer[offset] = 1
-          let xOffset = 1
-          if (testCube(x + 1, y, z)) {
-            --xOffset
-          }
-          if (testCube(x - 1, y, z)) {
-            --xOffset
-          }
-          let yOffset = 1
-          if (testCube(x, y + 1, z)) {
-            --yOffset
-          }
-          if (testCube(x, y - 1, z)) {
-            --yOffset
-          }
-          let zOffset = 1
-          if (testCube(x, y, z + 1)) {
-            --zOffset
-          }
-          if (testCube(x, y, z - 1)) {
-            --zOffset
-          }
+        if (on && ((cubesBuffer[offset] & CUBE_CENTER) === 0)) {
+          cubesBuffer[offset] = CUBE_ALL
+          const xOffset = 1 - setCubeBorder(x + 1, y, z, CUBE_XM1) - setCubeBorder(x - 1, y, z, CUBE_XP1)
+          const yOffset = 1 - setCubeBorder(x, y + 1, z, CUBE_YM1) - setCubeBorder(x, y - 1, z, CUBE_YP1)
+          const zOffset = 1 - setCubeBorder(x, y, z + 1, CUBE_ZM1) - setCubeBorder(x, y, z - 1, CUBE_ZP1)
           step2Count += volume(x, y, z, xOffset, yOffset, zOffset)
         }
-        if (!on && cubesBuffer[offset] === 1) {
+        if (!on && ((cubesBuffer[offset] & CUBE_CENTER) !== 0)) {
           cubesBuffer[offset] = 0
-          let xOffset = 1
-          if (!testCube(x + 1, y, z)) {
-            --xOffset
-          }
-          if (!testCube(x - 1, y, z)) {
-            --xOffset
-          }
-          let yOffset = 1
-          if (!testCube(x, y + 1, z)) {
-            --yOffset
-          }
-          if (!testCube(x, y - 1, z)) {
-            --yOffset
-          }
-          let zOffset = 1
-          if (!testCube(x, y, z + 1)) {
-            --zOffset
-          }
-          if (!testCube(x, y, z - 1)) {
-            --zOffset
-          }
+          const xOffset = 1 - clearCubeBorder(x + 1, y, z, CUBE_XM1) - clearCubeBorder(x - 1, y, z, CUBE_XP1)
+          const yOffset = 1 - clearCubeBorder(x, y + 1, z, CUBE_YM1) - clearCubeBorder(x, y - 1, z, CUBE_YP1)
+          const zOffset = 1 - clearCubeBorder(x, y, z + 1, CUBE_ZM1) - clearCubeBorder(x, y, z - 1, CUBE_ZP1)
           step2Count -= volume(x, y, z, xOffset, yOffset, zOffset)
         }
       }
