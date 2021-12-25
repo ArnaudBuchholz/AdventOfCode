@@ -1,17 +1,36 @@
 const { lines } = require('../lib')
 const verbose = process.argv.includes('-verbose')
+const cap50 = process.argv.includes('-50')
 
 const steps = lines
   .filter(line => !line.startsWith('#'))
   .map(line => {
     const match = line.match(/(on|off) x=(-?\d+)..(-?\d+),y=(-?\d+)..(-?\d+),z=(-?\d+)..(-?\d+)/)
     const on = match[1] === 'on'
-    const [xmin, xmax, ymin, ymax, zmin, zmax] = [].slice.call(match, 2).map(Number)
+    let [xmin, xmax, ymin, ymax, zmin, zmax] = [].slice.call(match, 2).map(Number)
+    if (cap50) {
+      xmin = Math.max(xmin, -50)
+      xmax = Math.min(xmax, 50)
+      if (xmax < xmin) {
+        return 0
+      }
+      ymin = Math.max(ymin, -50)
+      ymax = Math.min(ymax, 50)
+      if (ymax < ymin) {
+        return 0
+      }
+      zmin = Math.max(zmin, -50)
+      zmax = Math.min(zmax, 50)
+      if (ymax < ymin) {
+        return 0
+      }
+    }
     if (verbose) {
       console.log(on ? 'on' : 'off', 'x=', xmin, '..', xmax, ' y=', ymin, '..', ymax, ' z=', zmin, '..', zmax)
     }
     return { on, xmin, xmax, ymin, ymax, zmin, zmax }
   })
+  .filter(line => !!line)
 
 const min = -50
 const max = 50
@@ -48,35 +67,32 @@ steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
 
 console.log('Step 1 :', step1Count)
 
-const xAxis = []
-const yAxis = []
-const zAxis = []
+let xAxis = []
+let yAxis = []
+let zAxis = []
 
 steps.forEach(({ xmin, xmax, ymin, ymax, zmin, zmax }) => {
-  if (!xAxis.includes(xmin)) {
-    xAxis.push(xmin)
-  }
-  if (!xAxis.includes(xmax)) {
-    xAxis.push(xmax)
-  }
-  if (!yAxis.includes(ymin)) {
-    yAxis.push(ymin)
-  }
-  if (!yAxis.includes(ymax)) {
-    yAxis.push(ymax)
-  }
-  if (!zAxis.includes(zmin)) {
-    zAxis.push(zmin)
-  }
-  if (!zAxis.includes(zmax)) {
-    zAxis.push(zmax)
-  }
+  xAxis.push(xmin - 1, xmin, xmin + 1)
+  xAxis.push(xmax - 1, xmax, xmax + 1)
+  yAxis.push(ymin - 1, ymin, ymin + 1)
+  yAxis.push(ymax - 1, ymax, ymax + 1)
+  zAxis.push(zmin - 1, zmin, zmin + 1)
+  zAxis.push(zmax - 1, zmax, zmax + 1)
 })
 
-xAxis.sort((a, b) => a - b)
-yAxis.sort((a, b) => a - b)
-zAxis.sort((a, b) => a - b)
-const cubesBufferSize = (xAxis.length - 1) * (yAxis.length - 1) * (zAxis.length - 1)
+function unique (array, value) {
+  if (array.includes(value)) {
+    return array
+  }
+  array.push(value)
+  return array
+}
+
+xAxis = xAxis.reduce(unique, []).sort((a, b) => a - b).slice(1, -1)
+yAxis = yAxis.reduce(unique, []).sort((a, b) => a - b).slice(1, -1)
+zAxis = zAxis.reduce(unique, []).sort((a, b) => a - b).slice(1, -1)
+const xAxisBitLength = Math.ceil(xAxis.length / 8)
+const cubesBufferSize = xAxisBitLength * yAxis.length * zAxis.length
 
 if (verbose) {
   console.log('X axis :', xAxis)
@@ -88,68 +104,30 @@ if (verbose) {
 const cubesBuffer = new Int8Array(cubesBufferSize)
 cubesBuffer.fill(0)
 
-const CUBE_CENTER = 1
-const CUBE_XP1 = 2
-const CUBE_XM1 = 4
-const CUBE_YP1 = 8
-const CUBE_YM1 = 16
-const CUBE_ZP1 = 32
-const CUBE_ZM1 = 64
-const CUBE_ALL = CUBE_CENTER + CUBE_XP1 + CUBE_XM1 + CUBE_YP1 + CUBE_YM1 + CUBE_ZP1 + CUBE_ZM1
-
-function volume (x, y, z, xOffset = 1, yOffset = 1, zOffset = 1) {
+function volume (x, y, z) {
   const xmin = xAxis[x]
-  const xmax = xAxis[x + 1]
+  const xmax = xAxis[x + 1] ?? (xmin + 1)
   const ymin = yAxis[y]
-  const ymax = yAxis[y + 1]
+  const ymax = yAxis[y + 1] ?? (ymin + 1)
   const zmin = zAxis[z]
-  const zmax = zAxis[z + 1]
-  return (xmax - xmin + xOffset) * (ymax - ymin + yOffset) * (zmax - zmin + zOffset)
+  const zmax = zAxis[z + 1] ?? (zmin + 1)
+  const result = (xmax - xmin) * (ymax - ymin) * (zmax - zmin)
+  return result
 }
 
-function cubeOffset (x, y, z) {
-  const zOffset = (xAxis.length - 1) * (yAxis.length - 1) * z
-  const rowOffset = zOffset + (xAxis.length - 1) * y
-  return rowOffset + x
+function cubeOffsetAndMask (x, y, z) {
+  const zOffset = xAxisBitLength * yAxis.length * z
+  const rowOffset = zOffset + xAxisBitLength * y
+  const offset = rowOffset + Math.floor(x / 8)
+  const mask = 2 ** (x % 8)
+  return { offset, mask }
 }
 
-function secureCubeOffset (x, y, z) {
-  if (z < 0 || z >= zAxis.length - 1 ||
-    y < 0 || y >= yAxis.length - 1 ||
-    x < 0 || x >= xAxis.length - 1
-  ) {
-    return undefined
-  }
-  return cubeOffset(x, y, z)
+if (verbose) {
+  console.log('Setting on & off...')
 }
 
-function setCubeBorder (x, y, z, border) {
-  const offset = secureCubeOffset(x, y, z)
-  if (undefined === offset) {
-    return 0 // does not exist, should count
-  }
-  if ((cubesBuffer[offset] & border) === border) {
-    return 1 // already set, should not count
-  }
-  cubesBuffer[offset] |= border
-  return 0 // set, should count
-}
-
-function clearCubeBorder (x, y, z, border) {
-  const offset = secureCubeOffset(x, y, z)
-  if (undefined === offset) {
-    return 0 // does not exist, should count
-  }
-  if ((cubesBuffer[offset] & border) === 0) {
-    return 1 // already cleared, should not count
-  }
-  cubesBuffer[offset] &= ~border
-  return 0 // cleared, should count
-}
-
-let step2Count = 0
-
-steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
+steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }, stepIndex) => {
   const cubeXmin = xAxis.indexOf(xmin)
   const cubeXmax = xAxis.indexOf(xmax)
   const cubeYmin = yAxis.indexOf(ymin)
@@ -158,35 +136,51 @@ steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
   const cubeZmax = zAxis.indexOf(zmax)
 
   if (verbose) {
-    console.log(on ? 'on' : 'off', 'x=', xmin, '(', cubeXmin, ')', '..', xmax, '(', cubeXmax, ')',
+    console.log(stepIndex.toString().padStart(4, ' '), on ? 'on' : 'off',
+      ' x=', xmin, '(', cubeXmin, ')', '..', xmax, '(', cubeXmax, ')',
       ' y=', ymin, '(', cubeYmin, ')', '..', ymax, '(', cubeYmax, ')',
       ' z=', zmin, '(', cubeZmin, ')', '..', zmax, '(', cubeZmax, ')')
   }
 
-  for (let z = cubeZmin; z < cubeZmax; ++z) {
-    for (let y = cubeYmin; y < cubeYmax; ++y) {
-      for (let x = cubeXmin; x < cubeXmax; ++x) {
-        const offset = cubeOffset(x, y, z)
-        if (on && ((cubesBuffer[offset] & CUBE_CENTER) === 0)) {
-          cubesBuffer[offset] = CUBE_ALL
-          const xOffset = 1 - setCubeBorder(x + 1, y, z, CUBE_XM1) - setCubeBorder(x - 1, y, z, CUBE_XP1)
-          const yOffset = 1 - setCubeBorder(x, y + 1, z, CUBE_YM1) - setCubeBorder(x, y - 1, z, CUBE_YP1)
-          const zOffset = 1 - setCubeBorder(x, y, z + 1, CUBE_ZM1) - setCubeBorder(x, y, z - 1, CUBE_ZP1)
-          const count = volume(x, y, z, xOffset, yOffset, zOffset)
-          // Remove share egdes
-          step2Count += count
-        }
-        if (!on && ((cubesBuffer[offset] & CUBE_CENTER) !== 0)) {
-          cubesBuffer[offset] = 0
-          const xOffset = 1 - clearCubeBorder(x + 1, y, z, CUBE_XM1) - clearCubeBorder(x - 1, y, z, CUBE_XP1)
-          const yOffset = 1 - clearCubeBorder(x, y + 1, z, CUBE_YM1) - clearCubeBorder(x, y - 1, z, CUBE_YP1)
-          const zOffset = 1 - clearCubeBorder(x, y, z + 1, CUBE_ZM1) - clearCubeBorder(x, y, z - 1, CUBE_ZP1)
-          const count = volume(x, y, z, xOffset, yOffset, zOffset)
-          step2Count -= count
+  for (let z = cubeZmin; z <= cubeZmax; ++z) {
+    for (let y = cubeYmin; y <= cubeYmax; ++y) {
+      for (let x = cubeXmin; x <= cubeXmax; ++x) {
+        const { offset, mask } = cubeOffsetAndMask(x, y, z)
+        if (on) {
+          cubesBuffer[offset] |= mask
+        } else {
+          cubesBuffer[offset] &= ~mask
         }
       }
     }
   }
 })
 
+if (verbose) {
+  console.log('Counting...')
+}
+
+let step2Count = 0
+let start = new Date()
+
+zAxis.forEach((zMin, cubeZmin) => {
+  yAxis.forEach((yMin, cubeYmin) => {
+    xAxis.forEach((xMin, cubeXmin) => {
+      const now = new Date()
+      if (verbose && (now - start) > 5000) {
+        console.log(Math.floor(cubeZmin * 100 / zAxis.length), '%', step2Count)
+        start = now
+      }
+
+      const { offset, mask } = cubeOffsetAndMask(cubeXmin, cubeYmin, cubeZmin)
+      if ((cubesBuffer[offset] & mask) === mask) {
+        step2Count += volume(cubeXmin, cubeYmin, cubeZmin)
+      }
+    })
+  })
+})
+
 console.log('Step 2 :', step2Count)
+if (verbose && cap50) {
+  console.log(step1Count !== step2Count ? 'KO' : 'OK')
+}
