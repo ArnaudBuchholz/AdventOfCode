@@ -1,3 +1,5 @@
+const { deepEqual } = require('assert')
+const assert = require('assert')
 const { lines } = require('../lib')
 const verbose = process.argv.includes('-verbose')
 const cap50 = process.argv.includes('-50')
@@ -21,7 +23,7 @@ const steps = lines
       }
       zmin = Math.max(zmin, -50)
       zmax = Math.min(zmax, 50)
-      if (ymax < ymin) {
+      if (zmax < zmin) {
         return 0
       }
     }
@@ -67,120 +69,139 @@ steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }) => {
 
 console.log('Step 1 :', step1Count)
 
-let xAxis = []
-let yAxis = []
-let zAxis = []
+function axisIntersect (cuboid1, cuboid2, axis) {
+  const min1 = cuboid1[`${axis}min`]
+  const max1 = cuboid1[`${axis}max`]
+  const min2 = cuboid2[`${axis}min`]
+  const max2 = cuboid2[`${axis}max`]
+  if (min2 > max1) return null
+  if (max2 < min1) return null
 
-steps.forEach(({ xmin, xmax, ymin, ymax, zmin, zmax }) => {
-  xAxis.push(xmin - 1, xmin, xmin + 1)
-  xAxis.push(xmax - 1, xmax, xmax + 1)
-  yAxis.push(ymin - 1, ymin, ymin + 1)
-  yAxis.push(ymax - 1, ymax, ymax + 1)
-  zAxis.push(zmin - 1, zmin, zmin + 1)
-  zAxis.push(zmax - 1, zmax, zmax + 1)
-})
+  let min = Math.max(min1, min2)
+  let max = Math.min(max1, max2)
+  return { min, max }
+}
 
-function unique (array, value) {
-  if (array.includes(value)) {
-    return array
+function intersect (cuboid1, cuboid2) {
+  const x = axisIntersect(cuboid1, cuboid2, 'x')
+  const y = axisIntersect(cuboid1, cuboid2, 'y')
+  const z = axisIntersect(cuboid1, cuboid2, 'z')
+  if (x === null || y === null || z === null) {
+    return null
   }
-  array.push(value)
-  return array
+  return { xmin: x.min, xmax: x.max, ymin: y.min, ymax: y.max, zmin: z.min, zmax: z.max }
 }
 
-xAxis = xAxis.reduce(unique, []).sort((a, b) => a - b).slice(1, -1)
-yAxis = yAxis.reduce(unique, []).sort((a, b) => a - b).slice(1, -1)
-zAxis = zAxis.reduce(unique, []).sort((a, b) => a - b).slice(1, -1)
-const xAxisBitLength = Math.ceil(xAxis.length / 8)
-const cubesBufferSize = xAxisBitLength * yAxis.length * zAxis.length
-
-if (verbose) {
-  console.log('X axis :', xAxis)
-  console.log('Y axis :', yAxis)
-  console.log('Z axis :', zAxis)
-  console.log('Cubes buffer size :', cubesBufferSize)
+function equal (cuboid1, cuboid2) {
+  const dims = ['xmin', 'xmax', 'ymin', 'ymax', 'zmin', 'zmax']
+  return dims.every(dim => cuboid1[dim] === cuboid2[dim])
 }
 
-const cubesBuffer = new Int8Array(cubesBufferSize)
-cubesBuffer.fill(0)
-
-function volume (x, y, z) {
-  const xmin = xAxis[x]
-  const xmax = xAxis[x + 1] ?? (xmin + 1)
-  const ymin = yAxis[y]
-  const ymax = yAxis[y + 1] ?? (ymin + 1)
-  const zmin = zAxis[z]
-  const zmax = zAxis[z + 1] ?? (zmin + 1)
-  const result = (xmax - xmin) * (ymax - ymin) * (zmax - zmin)
-  return result
+function parse (cuboid) {
+  const match = cuboid.match(/x=(-?\d+)..(-?\d+),y=(-?\d+)..(-?\d+),z=(-?\d+)..(-?\d+)/)
+  let [xmin, xmax, ymin, ymax, zmin, zmax] = [].slice.call(match, 1).map(Number)
+  return { xmin, xmax, ymin, ymax, zmin, zmax }
 }
 
-function cubeOffsetAndMask (x, y, z) {
-  const zOffset = xAxisBitLength * yAxis.length * z
-  const rowOffset = zOffset + xAxisBitLength * y
-  const offset = rowOffset + Math.floor(x / 8)
-  const mask = 2 ** (x % 8)
-  return { offset, mask }
-}
+assert.deepEqual(intersect(parse('x=-1..1,y=0..1,z=0..1'), parse('x=-1..1,y=2..3,z=0..1')), null)
+assert.deepEqual(intersect(parse('x=-1..1,y=0..1,z=0..1'), parse('x=-1..0,y=0..1,z=0..1')), parse('x=-1..0,y=0..1,z=0..1'))
+assert.deepEqual(intersect(parse('x=-1..1,y=0..1,z=0..1'), parse('x=-1..1,y=0..2,z=0..1')), parse('x=-1..1,y=0..1,z=0..1'))
+assert.deepEqual(intersect(parse('x=-1..1,y=0..1,z=0..1'), parse('x=-1..0,y=0..1,z=2..3')), null)
 
-if (verbose) {
-  console.log('Setting on & off...')
-}
+assert.deepEqual(equal(parse('x=-1..1,y=0..1,z=0..1'), parse('x=-1..0,y=0..1,z=2..3')), false)
+assert.deepEqual(equal(parse('x=-1..1,y=0..1,z=0..1'), parse('x=-1..1,y=0..1,z=0..1')), true)
 
-steps.forEach(({ on, xmin, xmax, ymin, ymax, zmin, zmax }, stepIndex) => {
-  const cubeXmin = xAxis.indexOf(xmin)
-  const cubeXmax = xAxis.indexOf(xmax)
-  const cubeYmin = yAxis.indexOf(ymin)
-  const cubeYmax = yAxis.indexOf(ymax)
-  const cubeZmin = zAxis.indexOf(zmin)
-  const cubeZmax = zAxis.indexOf(zmax)
-
-  if (verbose) {
-    console.log(stepIndex.toString().padStart(4, ' '), on ? 'on' : 'off',
-      ' x=', xmin, '(', cubeXmin, ')', '..', xmax, '(', cubeXmax, ')',
-      ' y=', ymin, '(', cubeYmin, ')', '..', ymax, '(', cubeYmax, ')',
-      ' z=', zmin, '(', cubeZmin, ')', '..', zmax, '(', cubeZmax, ')')
-  }
-
-  for (let z = cubeZmin; z <= cubeZmax; ++z) {
-    for (let y = cubeYmin; y <= cubeYmax; ++y) {
-      for (let x = cubeXmin; x <= cubeXmax; ++x) {
-        const { offset, mask } = cubeOffsetAndMask(x, y, z)
-        if (on) {
-          cubesBuffer[offset] |= mask
-        } else {
-          cubesBuffer[offset] &= ~mask
-        }
-      }
+function axisExtrude (cuboid, remove, axis) {
+  const min = cuboid[`${axis}min`]
+  const max = cuboid[`${axis}max`]
+  const rmin = remove[`${axis}min`]
+  const rmax = remove[`${axis}max`]
+  if (rmax < max) {
+    if (rmin > min) {
+      return [{ min, max: rmin - 1 }, { min: rmax + 1, max }]
     }
+    return [{ min: rmax + 1, max }]
   }
-})
-
-if (verbose) {
-  console.log('Counting...')
+  return [{ min, max : rmin - 1 }]
 }
 
-let step2Count = 0
-let start = new Date()
-
-zAxis.forEach((zMin, cubeZmin) => {
-  yAxis.forEach((yMin, cubeYmin) => {
-    xAxis.forEach((xMin, cubeXmin) => {
-      const now = new Date()
-      if (verbose && (now - start) > 5000) {
-        console.log(Math.floor(cubeZmin * 100 / zAxis.length), '%', step2Count)
-        start = now
-      }
-
-      const { offset, mask } = cubeOffsetAndMask(cubeXmin, cubeYmin, cubeZmin)
-      if ((cubesBuffer[offset] & mask) === mask) {
-        step2Count += volume(cubeXmin, cubeYmin, cubeZmin)
-      }
+function extrude (cuboid, remove) {
+  const x = axisExtrude(cuboid, remove, 'x')
+  const y = axisExtrude(cuboid, remove, 'y')
+  const z = axisExtrude(cuboid, remove, 'z')
+  const shapes = []
+  x.forEach(({ min: xmin, max: xmax })=> {
+    y.forEach(({ min: ymin, max: ymax })=> {
+      z.forEach(({ min: zmin, max: zmax })=> {
+        shapes.push({ xmin, xmax, ymin, ymax, zmin, zmax })
+      })
     })
   })
+  return shapes
+}
+
+assert.deepEqual(extrude(parse('x=-3..3,y=-3..3,z=-3..3'), parse('x=-1..1,y=0..3,z=0..3')), [
+  parse('x=-3..-2,y=-3..-1,z=-3..-1'),
+  parse('x=2..3,y=-3..-1,z=-3..-1')
+])
+
+assert.deepEqual(extrude(parse('x=-3..3,y=-3..3,z=-3..3'), parse('x=-1..1,y=-1..1,z=-1..1')), [
+  parse('x=-3..-2,y=-3..-2,z=-3..-2'),
+  parse('x=-3..-2,y=-3..-2,z=2..3'),
+  parse('x=-3..-2,y=2..3,z=-3..-2'),
+  parse('x=-3..-2,y=2..3,z=2..3'),
+  parse('x=2..3,y=-3..-2,z=-3..-2'),
+  parse('x=2..3,y=-3..-2,z=2..3'),
+  parse('x=2..3,y=2..3,z=-3..-2'),
+  parse('x=2..3,y=2..3,z=2..3')
+])
+
+function split (cuboid1, cuboid2) {
+  if (equal(cuboid1, cuboid2)) {
+    return [[], [], [cuboid1]]
+  }
+  const common = intersect(cuboid1, cuboid2)
+  if (common === null) {
+    return null
+  }
+  if (equal(cuboid1, common)) {
+    return [[], extrude(cuboid2, common), common]
+  }
+  if (equal(cuboid2, common)) {
+    return [extrude(cuboid1, common), [], common]
+  }
+  return [extrude(cuboid1, common), extrude(cuboid2, common), common]
+}
+
+function volume ({ xmin, xmax, ymin, ymax, zmin, zmax }) {
+  return (xmax - xmin + 1) * (ymax - ymin + 1) * (zmax - zmin + 1)
+}
+
+let cuboids = []
+
+steps.forEach(step => {
+  const nextCuboids = []
+  let stepCuboids = [step]
+  if (step.on) {
+    cuboids.forEach(cuboid => {
+      const resultOfSplit = split(cuboid, step)
+      if (null === resultOfSplit) {
+        nextCuboids.push(cuboid)
+      } else {
+        nextCuboids.push(...resultOfSplit[0], resultOfSplit[2])
+        stepCuboids = resultOfSplit[1]
+      }
+    })
+  }
+  cuboids = [...nextCuboids, ...stepCuboids]
 })
 
-console.log('Step 2 :', step2Count)
-if (verbose && cap50) {
-  console.log(step1Count !== step2Count ? 'KO' : 'OK')
+if (verbose) {
+  console.log('Remaining cuboids :')
+  cuboids.forEach(({ xmin, xmax, ymin, ymax, zmin, zmax }) => {
+    console.log('x=', xmin, '..', xmax, 'y=', ymin, '..', ymax, 'z=', zmin, '..', zmax)
+  })
 }
+
+const step2Count = cuboids.reduce((total, cuboid) => total + volume(cuboid), 0)
+console.log('Step 2 :', step2Count)
