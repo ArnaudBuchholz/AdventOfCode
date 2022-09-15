@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "https://adventofcode.com",
   "scripts": {
-    "lint": "standard --fix"
+    "lint": "standard --fix",
+    "start": "reserve",
+    "build": "node build"
   },
   "repository": {
     "type": "git",
