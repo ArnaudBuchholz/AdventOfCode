@@ -16,6 +16,7 @@
   },
   "homepage": "https://github.com/ArnaudBuchholz/AdventOfCode#readme",
   "dependencies": {
-    "standard": "^16.0.4"
+    "reserve": "^1.15.2",
+    "standard": "^17.0.0"
   }
 }
