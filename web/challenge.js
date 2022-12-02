@@ -19,7 +19,15 @@ window.addEventListener('load', async () => {
 
   $('year').innerHTML = `${year} day ${day}`
   links.innerHTML += `<li class="nav-item">
-  <button id="run" class="btn btn-primary">&#9654;&#65039;</button>  
+  <div class="form-check mt-1 me-1">
+    <input class="form-check-input" type="checkbox" value="" id="useSample">
+    <label class="form-check-label" for="useSample">
+      Use sample
+    </label>
+  </div>  
+</li>
+<li class="nav-item">
+  <button id="run" class="btn btn-primary">&#9654;&#65039;</button>
 </li>
 <li class="nav-item">
   <a href="https://adventofcode.com/${year}/day/${day}" class="nav-link" target="_blank" rel="noopener noreferrer">source</a>
@@ -49,10 +57,23 @@ window.addEventListener('load', async () => {
     return false
   }
 
+  const noop = () => {}
+  const assert = new Proxy({
+    strictEqual(a, b) {
+      console.assert(a === b, `${JSON.stringify(a)} === ${JSON.stringify(b)}`)
+    },
+    notStrictEqual(a, b) {
+      console.assert(a !== b, `${JSON.stringify(a)} !== ${JSON.stringify(b)}`)
+    }
+  }, {
+    get (obj, prop) {
+      return obj[prop] || noop
+    }
+  })
 
   $('run').addEventListener('click', () => {
     $('content').innerHTML = ``
-    const selectedInput = sample
+    const selectedInput = $('useSample').checked ? sample : input
     const lines = selectedInput.split(/\r?\n/).filter(line => !!line.trim())
     let numbers
     try {
@@ -61,11 +82,11 @@ window.addEventListener('load', async () => {
       numbers = []
     }
     const gen = implementation({
-      input,
+      input: selectedInput,
       lines,
       numbers,
       verbose: true,
-      assert: {},
+      assert,
       option
     })
     const solutions = [...gen]
