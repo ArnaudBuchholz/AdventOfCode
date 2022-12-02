@@ -1,19 +1,21 @@
-const { numbers: depths } = require('../lib')
+require('../challenge')(function * ({
+  numbers: depths
+}) {
+  function getIncreaseCount (array) {
+    const { count } = array.reduce(({ last, count }, depth) => {
+      if (last && depth > last) {
+        ++count
+      }
+      return { last: depth, count }
+    }, { count: 0 })
+    return count
+  }
 
-function getIncreaseCount (array) {
-  const { count } = array.reduce(({ last, count }, depth) => {
-    if (last && depth > last) {
-      ++count
-    }
-    return { last: depth, count }
-  }, { count: 0 })
-  return count
-}
+  yield getIncreaseCount(depths)
 
-console.log('Part 1 :', getIncreaseCount(depths))
+  const windows = depths.slice(0, -2).map((depth, index) => {
+    return depth + depths[index + 1] + depths[index + 2]
+  })
 
-const windows = depths.slice(0, -2).map((depth, index) => {
-  return depth + depths[index + 1] + depths[index + 2]
+  yield getIncreaseCount(windows)
 })
-
-console.log('Part 2 :', getIncreaseCount(windows))

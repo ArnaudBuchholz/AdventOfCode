@@ -4,6 +4,6 @@ window.addEventListener('load', async () => {
   Object.keys(challenges)
     .sort()
     .forEach(year => {
-      years.innerHTML += `<li class="nav-item"><a href="year.html?${year}" class="nav-link">${year}</a></li>`
+      years.innerHTML += `<li class="nav-item"><a href="web/challenge.html?${year}" class="nav-link">${year}</a></li>`
     })
 })

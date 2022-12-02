@@ -1,42 +1,47 @@
-const { lines } = require('../lib')
-const positions = lines[0].split(',').map(Number)
+require('../challenge')(function * ({
+  lines
+}) {
+  const positions = lines[0].split(',').map(Number)
 
-const { min, max } = positions.reduce(({ min, max }, position) => {
-  min = Math.min(position, min)
-  max = Math.max(position, max)
-  return { min, max }
-}, { min: Number.MAX_SAFE_INTEGER, max: 0 })
-console.log('Positions :', positions.length, '[', min, ' - ', max, ']')
+  const { min, max } = positions.reduce(({ min, max }, position) => {
+    min = Math.min(position, min)
+    max = Math.max(position, max)
+    return { min, max }
+  }, { min: Number.MAX_SAFE_INTEGER, max: 0 })
+  console.log('Positions :', positions.length, '[', min, ' - ', max, ']')
 
-let optimalPosition
-let optimalFuel = Number.MAX_SAFE_INTEGER
+  let optimalPosition
+  let optimalFuel = Number.MAX_SAFE_INTEGER
 
-for (let proposal = min; proposal <= max; ++proposal) {
-  const fuel = positions.reduce((total, position) => total + Math.abs(position - proposal), 0)
-  if (fuel < optimalFuel) {
-    optimalPosition = proposal
-    optimalFuel = fuel
+  for (let proposal = min; proposal <= max; ++proposal) {
+    const fuel = positions.reduce((total, position) => total + Math.abs(position - proposal), 0)
+    if (fuel < optimalFuel) {
+      optimalPosition = proposal
+      optimalFuel = fuel
+    }
   }
-}
-console.log('Part 1', optimalPosition, optimalFuel)
+  console.log('Part 1', optimalPosition, optimalFuel)
+  yield optimalFuel
 
-optimalFuel = Number.MAX_SAFE_INTEGER // reset
+  optimalFuel = Number.MAX_SAFE_INTEGER // reset
 
-function cost (steps) {
-  if (cost.memorized[steps] !== undefined) {
-    return cost.memorized[steps]
+  function cost (steps) {
+    if (cost.memorized[steps] !== undefined) {
+      return cost.memorized[steps]
+    }
+    const result = steps + cost(steps - 1)
+    cost.memorized[steps] = result
+    return result
   }
-  const result = steps + cost(steps - 1)
-  cost.memorized[steps] = result
-  return result
-}
-cost.memorized = [0, 1]
+  cost.memorized = [0, 1]
 
-for (let proposal = min; proposal <= max; ++proposal) {
-  const fuel = positions.reduce((total, position) => total + cost(Math.abs(position - proposal)), 0)
-  if (fuel < optimalFuel) {
-    optimalPosition = proposal
-    optimalFuel = fuel
+  for (let proposal = min; proposal <= max; ++proposal) {
+    const fuel = positions.reduce((total, position) => total + cost(Math.abs(position - proposal)), 0)
+    if (fuel < optimalFuel) {
+      optimalPosition = proposal
+      optimalFuel = fuel
+    }
   }
-}
-console.log('Part 2', optimalPosition, optimalFuel)
+  console.log('Part 2', optimalPosition, optimalFuel)
+  yield optimalFuel
+})

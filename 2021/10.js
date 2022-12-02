@@ -1,83 +1,87 @@
-const assert = require('assert')
-const { lines } = require('../lib')
+require('../challenge')(function * ({
+  lines,
+  assert
+}) {
+  const openings = ['(', '[', '{', '<']
+  const closings = [')', ']', '}', '>']
+  const syntaxErrorPoints = { ')': 3, ']': 57, '}': 1197, '>': 25137 }
+  const missingPoints = { ')': 1, ']': 2, '}': 3, '>': 4 }
 
-const openings = ['(', '[', '{', '<']
-const closings = [')', ']', '}', '>']
-const syntaxErrorPoints = { ')': 3, ']': 57, '}': 1197, '>': 25137 }
-const missingPoints = { ')': 1, ']': 2, '}': 3, '>': 4 }
-
-/*
+  /*
   chunks -> chunk*
   chunk -> (chunks) | [chunks] | {chunks} | <chunks>
 */
 
-function chunk (parser) {
-  const openingType = openings.indexOf(parser.get())
-  const expectedClosing = closings[openingType]
-  parser.next()
-  if (chunks(parser) || parser.get() !== expectedClosing) {
-    parser.missing(expectedClosing)
-    return true
-  }
-  parser.next()
-  return false
-}
-
-function chunks (parser) {
-  while (openings.includes(parser.get())) {
-    if (chunk(parser)) {
+  function chunk (parser) {
+    const openingType = openings.indexOf(parser.get())
+    const expectedClosing = closings[openingType]
+    parser.next()
+    if (chunks(parser) || parser.get() !== expectedClosing) {
+      parser.missing(expectedClosing)
       return true
     }
+    parser.next()
+    return false
   }
-  return false
-}
 
-function parse (code) {
-  let index = 0
-  const missing = []
-  const parser = {
-    get () { return code[index] },
-    next () { ++index },
-    missing (char) { missing.push(char) }
-  }
-  const result = chunks(parser)
-  if (result === true || index < code.length) {
-    const char = code[index]
-    if (char !== undefined) {
-      return { index, char }
+  function chunks (parser) {
+    while (openings.includes(parser.get())) {
+      if (chunk(parser)) {
+        return true
+      }
     }
-    return { index, char, missing }
+    return false
   }
-  return undefined // ok
-}
 
-assert.strictEqual(parse('<>'), undefined)
-assert.strictEqual(parse('<>[]'), undefined)
-assert.strictEqual(parse('<{}>[]'), undefined)
-assert.strictEqual(parse('<{}()>[(){<>}]'), undefined)
-assert.strictEqual(parse('<{}()>[(){<>}]'), undefined)
-assert.deepEqual(parse('<{>()>[(){<>}]'), { index: 2, char: '>' })
-assert.deepEqual(parse('<{}(}>[(){<>}]'), { index: 4, char: '}' })
-assert.deepEqual(parse('['), { index: 1, char: undefined, missing: [']'] })
-assert.deepEqual(parse('[{[{({})'), { index: 8, char: undefined, missing: ['}', ']', '}', ']'] })
-
-const syntaxErrorScore = lines.reduce((sum, line) => {
-  const parsed = parse(line)
-  if (parsed && parsed.char) {
-    return sum + syntaxErrorPoints[parsed.char]
+  function parse (code) {
+    let index = 0
+    const missing = []
+    const parser = {
+      get () { return code[index] },
+      next () { ++index },
+      missing (char) { missing.push(char) }
+    }
+    const result = chunks(parser)
+    if (result === true || index < code.length) {
+      const char = code[index]
+      if (char !== undefined) {
+        return { index, char }
+      }
+      return { index, char, missing }
+    }
+    return undefined // ok
   }
-  return sum
-}, 0)
-console.log('Part 1 :', syntaxErrorScore)
 
-const completionStringsScore = lines
-  .map(line => {
+  assert.strictEqual(parse('<>'), undefined)
+  assert.strictEqual(parse('<>[]'), undefined)
+  assert.strictEqual(parse('<{}>[]'), undefined)
+  assert.strictEqual(parse('<{}()>[(){<>}]'), undefined)
+  assert.strictEqual(parse('<{}()>[(){<>}]'), undefined)
+  assert.deepEqual(parse('<{>()>[(){<>}]'), { index: 2, char: '>' })
+  assert.deepEqual(parse('<{}(}>[(){<>}]'), { index: 4, char: '}' })
+  assert.deepEqual(parse('['), { index: 1, char: undefined, missing: [']'] })
+  assert.deepEqual(parse('[{[{({})'), { index: 8, char: undefined, missing: ['}', ']', '}', ']'] })
+
+  const syntaxErrorScore = lines.reduce((sum, line) => {
     const parsed = parse(line)
-    if (parsed.missing) {
-      return parsed.missing.reduce((total, char) => 5 * total + missingPoints[char], 0)
+    if (parsed && parsed.char) {
+      return sum + syntaxErrorPoints[parsed.char]
     }
-    return 0
-  })
-  .filter(score => score > 0)
-  .sort((a, b) => b - a)
-console.log('Part 2 :', completionStringsScore[(completionStringsScore.length - 1) / 2])
+    return sum
+  }, 0)
+  console.log('Part 1 :', syntaxErrorScore)
+  yield syntaxErrorScore
+
+  const completionStringsScore = lines
+    .map(line => {
+      const parsed = parse(line)
+      if (parsed.missing) {
+        return parsed.missing.reduce((total, char) => 5 * total + missingPoints[char], 0)
+      }
+      return 0
+    })
+    .filter(score => score > 0)
+    .sort((a, b) => b - a)
+  console.log('Part 2 :', completionStringsScore[(completionStringsScore.length - 1) / 2])
+  yield completionStringsScore[(completionStringsScore.length - 1) / 2]
+})
