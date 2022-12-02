@@ -27,10 +27,13 @@ window.addEventListener('load', async () => {
   </div>  
 </li>
 <li class="nav-item">
-  <button id="run" class="btn btn-primary">&#9654;&#65039;</button>
+  <button id="run" class="btn btn-primary">&#9654;</button>
 </li>
 <li class="nav-item">
-  <a href="https://adventofcode.com/${year}/day/${day}" class="nav-link" target="_blank" rel="noopener noreferrer">source</a>
+  <a href="https://adventofcode.com/${year}/day/${day}" class="nav-link" target="_blank" rel="noopener noreferrer">challenge</a>
+</li>
+<li class="nav-item">
+  <a href="https://github.com/ArnaudBuchholz/AdventOfCode/blob/main/${year}/${day}.js" class="nav-link" target="_blank" rel="noopener noreferrer">solution</a>
 </li>`
 
   const [sample, input] = await Promise.all([
@@ -71,7 +74,7 @@ window.addEventListener('load', async () => {
     }
   })
 
-  $('run').addEventListener('click', () => {
+  function run () {
     $('content').innerHTML = ``
     const selectedInput = $('useSample').checked ? sample : input
     const lines = selectedInput.split(/\r?\n/).filter(line => !!line.trim())
@@ -95,5 +98,14 @@ window.addEventListener('load', async () => {
       line.appendChild(document.createTextNode(`Part ${index + 1}: ${solution}`))
       $('content').appendChild(line)
     })
-  })
+  }
+
+  $('run').addEventListener('click', run)
+
+  if (!location.toString().startsWith('http://localhost')) {
+    script.addEventListener('load', () => {
+      $('useSample').checked = true
+      run()
+    })
+  }
 })
