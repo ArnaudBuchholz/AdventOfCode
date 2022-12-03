@@ -19,9 +19,9 @@ try {
   } catch (e) {
     numbers = []
   }
-  module.exports = callback => {
+  module.exports = implementation => {
     try {
-      const gen = callback({
+      const gen = implementation({
         input,
         lines,
         numbers,

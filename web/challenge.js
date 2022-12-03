@@ -1,3 +1,5 @@
+/* global location, alert */
+
 window.addEventListener('load', async () => {
   const $ = id => document.getElementById(id)
 
@@ -62,11 +64,14 @@ window.addEventListener('load', async () => {
 
   const noop = () => {}
   const assert = new Proxy({
-    strictEqual(a, b) {
-      console.assert(a === b, `${JSON.stringify(a)} === ${JSON.stringify(b)}`)
+    strictEqual (a, b, message) {
+      console.assert(a === b, message || `${JSON.stringify(a)} === ${JSON.stringify(b)}`)
     },
-    notStrictEqual(a, b) {
-      console.assert(a !== b, `${JSON.stringify(a)} !== ${JSON.stringify(b)}`)
+    notStrictEqual (a, b, message) {
+      console.assert(a !== b, message || `${JSON.stringify(a)} !== ${JSON.stringify(b)}`)
+    },
+    ok (bool, message) {
+      console.assert(bool, message || 'OK')
     }
   }, {
     get (obj, prop) {
@@ -75,7 +80,7 @@ window.addEventListener('load', async () => {
   })
 
   function run () {
-    $('content').innerHTML = ``
+    $('content').innerHTML = ''
     const selectedInput = $('useSample').checked ? sample : input
     const lines = selectedInput.split(/\r?\n/).filter(line => !!line.trim())
     let numbers

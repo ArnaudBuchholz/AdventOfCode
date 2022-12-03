@@ -175,11 +175,11 @@ require('../challenge')(function * ({
       rotations.every(rotation => {
         const rotatedBeacons = scanner.detected.map(({ x, y, z }) => {
           const coords = {
-            x: x,
+            x,
             '-x': -x,
-            y: y,
+            y,
             '-y': -y,
-            z: z,
+            z,
             '-z': -z
           }
           const rotated = []

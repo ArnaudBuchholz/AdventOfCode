@@ -27,7 +27,7 @@ require('../challenge')(function * ({
   assert.strictEqual(scoreForP2(SCISSOR, SCISSOR), 6)
 
   yield lines.reduce((score, line) => {
-    let [,p1, p2] = line.match(/(A|B|C) (X|Y|Z)/)
+    let [, p1, p2] = line.match(/(A|B|C) (X|Y|Z)/)
     p1 = { A: ROCK, B: PAPER, C: SCISSOR }[p1]
     assert.notStrictEqual(p1, undefined)
     p2 = { X: ROCK, Y: PAPER, Z: SCISSOR }[p2]
@@ -37,9 +37,9 @@ require('../challenge')(function * ({
 
   const LOSE = 'X'
   const DRAW = 'Y'
-  const WIN = 'Z'
+  // const WIN = 'Z'
 
-  function calcP2(p1, objective) {
+  function calcP2 (p1, objective) {
     if (objective === DRAW) {
       return p1
     }
@@ -50,10 +50,10 @@ require('../challenge')(function * ({
   }
 
   yield lines.reduce((score, line) => {
-    let [,p1, objective] = line.match(/(A|B|C) (X|Y|Z)/)
+    let [, p1, objective] = line.match(/(A|B|C) (X|Y|Z)/)
     p1 = { A: ROCK, B: PAPER, C: SCISSOR }[p1]
     assert.notStrictEqual(p1, undefined)
-    p2 = calcP2(p1, objective)
+    const p2 = calcP2(p1, objective)
     assert.notStrictEqual(p2, undefined)
     return score + scoreForP2(p1, p2)
   }, 0)
