@@ -19,9 +19,9 @@ try {
   } catch (e) {
     numbers = []
   }
-  module.exports = implementation => {
+  module.exports = async implementation => {
     try {
-      const gen = implementation({
+      const genSolutions = implementation({
         input,
         lines,
         numbers,
@@ -29,8 +29,11 @@ try {
         assert,
         option: ({ label, cmd }) => process.argv.includes(`-${cmd}`)
       })
-      const answers = [...gen]
-      console.log('Solutions', answers)
+      const solutions = []
+      for await (const solution of genSolutions) {
+        solutions.push(solution)
+      }
+      console.log('Solutions', solutions)
     } catch (e) {
       console.error(e)
       process.exit(-1)
