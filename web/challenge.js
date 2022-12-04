@@ -1,4 +1,4 @@
-/* global location, alert */
+/* global location */
 
 window.addEventListener('load', async () => {
   const $ = id => document.getElementById(id)
@@ -54,7 +54,7 @@ window.addEventListener('load', async () => {
     if (modules[path]) {
       return Promise.resolve(modules[path])
     }
-    window.module = {};
+    window.module = {}
     const script = document.createElement('script')
     script.src = `${path}.js`
     document.head.appendChild(script)
