@@ -44,19 +44,31 @@ window.addEventListener('load', async () => {
   ])
 
   let implementation
+  const modules = {}
   window.require = function (path) {
-    if (path !== '../challenge') {
-      alert(`invalid require(${JSON.stringify(path)}) detected`)
-      return
+    if (path === '../challenge') {
+      return function (callback) {
+        implementation = callback
+      }
     }
-    return function (callback) {
-      implementation = callback
+    if (modules[path]) {
+      return Promise.resolve(modules[path])
     }
+    window.module = {};
+    const script = document.createElement('script')
+    script.src = `${path}.js`
+    document.head.appendChild(script)
+    return new Promise(resolve => {
+      script.addEventListener('load', () => {
+        modules[path] = window.module.exports
+        resolve(modules[path])
+      })
+    })
   }
 
-  const script = document.createElement('script')
-  script.src = `../${year}/${day}.js`
-  document.head.appendChild(script)
+  const mainScript = document.createElement('script')
+  mainScript.src = `../${year}/${day}.js`
+  document.head.appendChild(mainScript)
 
   function option ({ label, cmd }) {
     return false
@@ -79,7 +91,7 @@ window.addEventListener('load', async () => {
     }
   })
 
-  function run () {
+  async function run () {
     $('content').innerHTML = ''
     const selectedInput = $('useSample').checked ? sample : input
     const lines = selectedInput.split(/\r?\n/).filter(line => !!line.trim())
@@ -89,7 +101,7 @@ window.addEventListener('load', async () => {
     } catch (e) {
       numbers = []
     }
-    const gen = implementation({
+    const genSolutions = implementation({
       input: selectedInput,
       lines,
       numbers,
@@ -97,7 +109,10 @@ window.addEventListener('load', async () => {
       assert,
       option
     })
-    const solutions = [...gen]
+    const solutions = []
+    for await (const solution of genSolutions) {
+      solutions.push(solution)
+    }
     solutions.forEach((solution, index) => {
       const line = document.createElement('div')
       line.appendChild(document.createTextNode(`Part ${index + 1}: ${solution}`))
@@ -108,7 +123,7 @@ window.addEventListener('load', async () => {
   $('run').addEventListener('click', run)
 
   if (!location.toString().startsWith('http://localhost')) {
-    script.addEventListener('load', () => {
+    mainScript.addEventListener('load', () => {
       $('useSample').checked = true
       run()
     })
