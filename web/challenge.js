@@ -93,7 +93,8 @@ window.addEventListener('load', async () => {
 
   async function run () {
     $('content').innerHTML = ''
-    const selectedInput = $('useSample').checked ? sample : input
+    const isSample = $('useSample').checked
+    const selectedInput = isSample ? sample : input
     const lines = selectedInput.split(/\r?\n/).filter(line => !!line.trim())
     let numbers
     try {
@@ -102,6 +103,7 @@ window.addEventListener('load', async () => {
       numbers = []
     }
     const genSolutions = implementation({
+      isSample,
       input: selectedInput,
       lines,
       numbers,
