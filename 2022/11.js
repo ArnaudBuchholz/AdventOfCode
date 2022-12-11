@@ -36,6 +36,8 @@ require('../challenge')(async function * ({
       }
     })
 
+    monkeys.factor = monkeys.reduce((factor, monkey) => factor * monkey.divisible, 1n)
+
     return monkeys
   }
 
@@ -44,7 +46,7 @@ require('../challenge')(async function * ({
       while (monkey.items.length > 0) {
         ++monkey.activity
         let item = monkey.items.shift()
-        item = monkey.operation(item)
+        item = monkey.operation(item) % monkeys.factor
         if (calmDown) {
           item = item / 3n
         }
