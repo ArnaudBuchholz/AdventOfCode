@@ -12,22 +12,22 @@ require('../challenge')(async function * ({
       } else {
         const monkey = monkeys.at(-1)
         if (line.startsWith('  Starting items: ')) {
-          monkey.items = line.substring(18).split(', ').map(BigInt)
+          monkey.items = line.substring(18).split(', ').map(Number)
         } else if (line.startsWith('  Operation: ')) {
           const [, op, rawNumber] = line.match(/new = old (\*|\+) (\d+|old)/)
           if (op === '*') {
             if (rawNumber === 'old') {
               monkey.operation = value => value * value
             } else {
-              const number = BigInt(rawNumber)
+              const number = Number(rawNumber)
               monkey.operation = value => value * number
             }
           } else {
-            const number = BigInt(rawNumber)
+            const number = Number(rawNumber)
             monkey.operation = value => value + number
           }
         } else if (line.startsWith('  Test: divisible by ')) {
-          monkey.divisible = BigInt(line.substring(21))
+          monkey.divisible = Number(line.substring(21))
         } else if (line.startsWith('    If true: throw to monkey ')) {
           monkey.true = Number(line.substring(29))
         } else if (line.startsWith('    If false: throw to monkey ')) {
@@ -36,7 +36,7 @@ require('../challenge')(async function * ({
       }
     })
 
-    monkeys.factor = monkeys.reduce((factor, monkey) => factor * monkey.divisible, 1n)
+    monkeys.modulo = monkeys.reduce((factor, monkey) => factor * monkey.divisible, 1)
 
     return monkeys
   }
@@ -46,11 +46,11 @@ require('../challenge')(async function * ({
       while (monkey.items.length > 0) {
         ++monkey.activity
         let item = monkey.items.shift()
-        item = monkey.operation(item) % monkeys.factor
+        item = monkey.operation(item) % monkeys.modulo
         if (calmDown) {
-          item = item / 3n
+          item = Math.floor(item / 3)
         }
-        if (item % monkey.divisible === 0n) {
+        if (item % monkey.divisible === 0) {
           monkeys[monkey.true].items.push(item)
         } else {
           monkeys[monkey.false].items.push(item)
