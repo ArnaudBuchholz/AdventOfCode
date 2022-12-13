@@ -129,5 +129,7 @@ window.addEventListener('load', async () => {
       $('useSample').checked = true
       run()
     })
+  } else if (location.hash === '#sample') {
+    $('useSample').checked = true
   }
 })
