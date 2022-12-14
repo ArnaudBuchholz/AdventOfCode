@@ -117,6 +117,7 @@ require('../challenge')(async function * ({
 
   // Assuming the sand will flow diagonally from 500, 0 to maxY + 2, it mins that maxX = 500 + (maxY + 2) and minX = 500 - (maxY + 2)
   maxY += 2
+  // Adding one to be on the safe side ;-)
   maxX = Math.max(maxX, 500 + maxY + 1)
   minX = Math.min(minX, 500 - maxY - 1)
 
