@@ -1,6 +1,4 @@
 require('../challenge')(async function * ({
-  isSample,
-  assert,
   lines
 }) {
   // Search the bounds
