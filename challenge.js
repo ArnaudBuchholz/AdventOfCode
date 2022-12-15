@@ -22,6 +22,7 @@ try {
   module.exports = async implementation => {
     try {
       const genSolutions = implementation({
+        isSample: folder === 'sample',
         input,
         lines,
         numbers,
