@@ -33,7 +33,7 @@ require('../challenge')(async function * ({
       }
     }
 
-    const attempts = [{
+    const steps = [{
       pos: 'AA',
       time: 0,
       opened: [],
@@ -41,10 +41,10 @@ require('../challenge')(async function * ({
       released: 0
     }]
 
-    while (attempts.length) {
+    while (steps.length) {
       if (Date.now() - timer > 1000) {
         timer = Date.now()
-        console.log(`Searching... ${attempts.length} ${checked} ${result.released}`)
+        console.log(`Searching... ${steps.length} ${checked} ${result.released}`)
       }
 
       let {
@@ -54,12 +54,7 @@ require('../challenge')(async function * ({
         opened,
         totalRate,
         released
-      } = attempts.pop()
-
-      const {
-        rate,
-        to
-      } = rooms[pos]
+      } = steps.pop()
 
       ++time
       released += totalRate
@@ -74,10 +69,15 @@ require('../challenge')(async function * ({
         continue
       }
 
+      const {
+        rate,
+        to
+      } = rooms[pos]
+
       // move but avoid immediately turning back to previous room
       to
         .filter(room => room !== from)
-        .forEach(room => attempts.push({
+        .forEach(room => steps.push({
           pos: room,
           from: pos,
           time,
@@ -87,7 +87,7 @@ require('../challenge')(async function * ({
         }))
       if (pos !== 'AA' && rate !== 0 && !opened.includes(pos)) {
         // open new valve
-        attempts.push({
+        steps.push({
           pos,
           time,
           opened: [...opened, pos],
