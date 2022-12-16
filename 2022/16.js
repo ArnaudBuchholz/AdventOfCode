@@ -12,9 +12,11 @@ require('../challenge')(async function * ({
     }
     return map
   }, {})
-  console.log(rooms)
 
-  function solution (maxTime, players) {
+  const valvesToOpen = Object.keys(rooms).filter(room => rooms[room].rate !== 0).length
+  console.log(rooms, valvesToOpen)
+
+  function solution (maxTime) {
     let timer = Date.now()
 
     const result = {
@@ -64,6 +66,11 @@ require('../challenge')(async function * ({
 
       if (time === maxTime) {
         check(opened, released)
+        continue
+      }
+
+      if (opened.length === valvesToOpen) {
+        check(opened, released + (maxTime - time) * totalRate)
         continue
       }
 
