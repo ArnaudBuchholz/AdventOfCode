@@ -16,7 +16,7 @@ require('../challenge')(async function * ({
   const valvesToOpen = Object.keys(rooms).filter(room => rooms[room].rate !== 0).length
   console.log(rooms, valvesToOpen)
 
-  function solution (maxTime, actors) {
+  function solution (maxTime, actorCount) {
     let timer = Date.now()
 
     const result = {
@@ -34,7 +34,7 @@ require('../challenge')(async function * ({
     }
 
     const steps = [{
-      pos: new Array(actors).fill('AA'),
+      pos: new Array(actorCount).fill('AA'),
       time: 0,
       opened: [],
       totalRate: 0,
@@ -69,34 +69,62 @@ require('../challenge')(async function * ({
         continue
       }
 
-      const actorPos = pos[0]
-      const actorFrom = from[0]
-      const {
-        rate,
-        to
-      } = rooms[actorPos]
+      const nextPossibleActionsByActor = []
 
-      // move but avoid immediately turning back to previous room
-      to
-        .filter(room => room !== actorFrom)
-        .forEach(room => steps.push({
-          pos: [room],
-          from: [actorPos],
-          time,
-          opened,
-          totalRate,
-          released
-        }))
-      if (pos !== 'AA' && rate !== 0 && !opened.includes(actorPos)) {
-        // open new valve
-        steps.push({
-          pos,
-          time,
-          opened: [...opened, actorPos],
-          totalRate: totalRate + rate,
-          released
-        })
+      for (let actor = 0; actor < actorCount; ++actor) {
+        const actions = []
+        nextPossibleActionsByActor.push(actions)
+
+        const actorPos = pos[0]
+        const actorFrom = from[0]
+        const {
+          rate,
+          to
+        } = rooms[actorPos]
+  
+        // move but avoid immediately turning back to previous room
+        to
+          .filter(room => room !== actorFrom)
+          .forEach(room => actions.push({
+            move: {
+              to: room,
+              from: actorPos
+            }
+          }))
+        if (pos !== 'AA' && rate !== 0 && !opened.includes(actorPos)) {
+          // open new valve
+          actions.push({
+            open: {
+              valve: actorPos,
+              rate
+            }
+          })
+        }
       }
+
+      nextPossibleActionsByActor.forEach((actions, actor) => {
+        actions.forEach(({ move, open }) => {
+          if (move) {
+            steps.push({
+              pos: [move.to],
+              from: [move.from],
+              time,
+              opened,
+              totalRate,
+              released
+            })
+          } else /* if(open) */ {
+            steps.push({
+              pos,
+              from: [undefined],
+              time,
+              opened: [...opened, open.valve],
+              totalRate: totalRate + open.rate,
+              released
+            })
+          }
+        })
+      })
     }
 
     console.log(checked, result)
