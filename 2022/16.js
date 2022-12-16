@@ -24,8 +24,12 @@ require('../challenge')(async function * ({
       released: 0
     }
 
+    let iterations = 0
     let checked = 0
     function check (opened, released) {
+      if (checked === 0) {
+        console.log(`First result after ${iterations} iterations`)
+      }
       ++checked
       if (released > result.released) {
         result.released = released
@@ -42,6 +46,8 @@ require('../challenge')(async function * ({
     }]
 
     while (steps.length) {
+      ++iterations
+
       if (Date.now() - timer > 1000) {
         timer = Date.now()
         console.log(`Searching... ${steps.length} ${checked} ${result.released}`)
@@ -102,8 +108,8 @@ require('../challenge')(async function * ({
         }
       }
 
-      nextPossibleActionsByActor.forEach((actions, actor) => {
-        actions.forEach(({ move, open }) => {
+      if (actorCount === 1) {
+        nextPossibleActionsByActor[0].forEach(({ move, open }) => {
           if (move) {
             steps.push({
               pos: [move.to],
@@ -124,7 +130,56 @@ require('../challenge')(async function * ({
             })
           }
         })
-      })
+      } else if (actorCount === 2) {
+        nextPossibleActionsByActor[0].forEach(({ move: move0, open: open0 }) => {
+          nextPossibleActionsByActor[1].forEach(({ move: move1, open: open1 }) => {
+            if (open0 && open1) {
+              if (open0.valve === open1.valve) {
+                return // non sense
+              }
+              steps.push({
+                pos,
+                from: [undefined, undefined],
+                time,
+                opened: [...opened, open0.valve, open1.valve],
+                totalRate: totalRate + open0.rate + open1.rate,
+                released
+              })
+            // Must be a better way...
+            } else if (open0 && move1) {
+              steps.push({
+                pos: [pos[0], move1.to],
+                from: [undefined, move1.from],
+                time,
+                opened: [...opened, open0.valve],
+                totalRate: totalRate + open0.rate,
+                released
+              })
+
+            } else if (move0 && open1) {
+              steps.push({
+                pos: [move0.to, pos[1]],
+                from: [move0.from, undefined],
+                time,
+                opened: [...opened, open1.valve],
+                totalRate: totalRate + open1.rate,
+                released
+              })
+
+            } else if (move0 && move1) {
+              steps.push({
+                pos: [move0.to, move1.to],
+                from: [move0.from, move1.from],
+                time,
+                opened,
+                totalRate,
+                released
+              })
+
+            }
+          })
+        })
+      }
     }
 
     console.log(checked, result)
@@ -132,4 +187,5 @@ require('../challenge')(async function * ({
   }
 
   yield solution(30, 1)
+  // yield solution(26, 2)
 })
