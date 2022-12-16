@@ -16,7 +16,7 @@ require('../challenge')(async function * ({
   const valvesToOpen = Object.keys(rooms).filter(room => rooms[room].rate !== 0).length
   console.log(rooms, valvesToOpen)
 
-  function solution (maxTime) {
+  function solution (maxTime, actors) {
     let timer = Date.now()
 
     const result = {
@@ -34,7 +34,7 @@ require('../challenge')(async function * ({
     }
 
     const steps = [{
-      pos: 'AA',
+      pos: new Array(actors).fill('AA'),
       time: 0,
       opened: [],
       totalRate: 0,
@@ -49,7 +49,7 @@ require('../challenge')(async function * ({
 
       let {
         pos,
-        from,
+        from = [],
         time,
         opened,
         totalRate,
@@ -69,28 +69,30 @@ require('../challenge')(async function * ({
         continue
       }
 
+      const actorPos = pos[0]
+      const actorFrom = from[0]
       const {
         rate,
         to
-      } = rooms[pos]
+      } = rooms[actorPos]
 
       // move but avoid immediately turning back to previous room
       to
-        .filter(room => room !== from)
+        .filter(room => room !== actorFrom)
         .forEach(room => steps.push({
-          pos: room,
-          from: pos,
+          pos: [room],
+          from: [actorPos],
           time,
           opened,
           totalRate,
           released
         }))
-      if (pos !== 'AA' && rate !== 0 && !opened.includes(pos)) {
+      if (pos !== 'AA' && rate !== 0 && !opened.includes(actorPos)) {
         // open new valve
         steps.push({
           pos,
           time,
-          opened: [...opened, pos],
+          opened: [...opened, actorPos],
           totalRate: totalRate + rate,
           released
         })
