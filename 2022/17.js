@@ -1,5 +1,4 @@
 require('../challenge')(async function * ({
-  isSample,
   lines
 }) {
   const buildLoopControl = await require('../lib/loop_control')
