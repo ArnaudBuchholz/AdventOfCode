@@ -2,6 +2,8 @@ require('../challenge')(async function * ({
   isSample,
   lines
 }) {
+  const buildLoopControl = await require('../lib/loop_control')
+
   let minX = Infinity
   let maxX = 0
   let minY = Infinity
@@ -56,13 +58,12 @@ require('../challenge')(async function * ({
   }
 
   const solution2 = (maxCoord) => {
-    let timer = Date.now()
+    const loop = buildLoopControl()
     for (let y = 0; y <= maxCoord; ++y) {
       for (let x = 0; x <= maxCoord; ++x) {
-        if (Date.now() - timer > 5000) {
-          timer = Date.now()
-          console.log(`Searching... ${Math.floor(100 * (y * maxCoord + x) / maxCoord ** maxCoord)}%`)
-        }
+        loop.log('Searching... {percent}%', {
+          percent: Math.floor(100 * y / maxCoord)
+        })
         const sensor = sensors.find(({ sx, sy, d }) => {
           return dist(sx, sy, x, y) <= d
         })
