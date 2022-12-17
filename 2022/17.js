@@ -3,6 +3,7 @@ require('../challenge')(async function * ({
   lines
 }) {
   const buildLoopControl = await require('../lib/loop_control')
+  const { detectRepetitionPattern } = await require('../lib/array')
   const moves = lines[0].split('')
 
   const pieces = [{
@@ -44,16 +45,11 @@ require('../challenge')(async function * ({
     blocks: [[0, 0], [0, 1], [1, 0], [1, 1]]
   }]
 
-  /*
-    function log (chamber) {
-      console.log([...chamber].reverse().join('\n'))
-    }
-  */
-
   function simulate (count) {
     const loop = buildLoopControl()
 
     const chamber = []
+    chamber.increments = []
     const free = (x, y) => chamber[y] === undefined || chamber[y][x] === '.'
     const set = (x, y) => {
       const row = chamber[y] || '.......'
@@ -77,6 +73,7 @@ require('../challenge')(async function * ({
       const piece = pieces[pieceIndex]
       let x = 2
       let y = chamber.length + 3
+      const lastHeight = chamber.length
 
       while (true) {
         const move = moves[moveIndex]
@@ -96,6 +93,11 @@ require('../challenge')(async function * ({
           --y
         } else {
           print(piece, x, y)
+
+          // Keep track of increments to detect a repetition pattern
+          const heightDiff = chamber.length - lastHeight
+          chamber.increments.push(heightDiff)
+
           break
         }
       }
@@ -106,6 +108,25 @@ require('../challenge')(async function * ({
     return chamber
   }
 
-  yield simulate(2022).length
-  yield simulate(1000000000000).length
+  const chamber = simulate(moves.length * pieces.length)
+  // console.log([...chamber].reverse().join('\n'))
+
+  const { skip, length } = detectRepetitionPattern(chamber.increments)
+  console.log('Repetition pattern :', { skip, length })
+
+  const skipHeight = chamber.increments.slice(0, skip).reduce((total, height) => total + height, 0)
+  const lengthHeight = chamber.increments.slice(skip, skip + length).reduce((total, height) => total + height, 0)
+  console.log('Corresponding heights :', { skipHeight, lengthHeight })
+
+  function compute (count) {
+    count -= skip
+    const remainder = count % length
+    const mul = (count - remainder) / length
+    return skipHeight +
+      mul * lengthHeight +
+      chamber.increments.slice(skip, skip + remainder).reduce((total, height) => total + height, 0)
+  }
+
+  yield compute(2022)
+  yield compute(1000000000000)
 })
