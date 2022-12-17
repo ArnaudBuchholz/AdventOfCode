@@ -2,6 +2,7 @@ require('../challenge')(async function * ({
   isSample,
   lines
 }) {
+  const buildLoopControl = await require('../lib/loop_control')
   const moves = lines[0].split('')
 
   const pieces = [{
@@ -50,7 +51,7 @@ require('../challenge')(async function * ({
   */
 
   function simulate (count) {
-    let timer = Date.now()
+    const loop = buildLoopControl()
 
     const chamber = []
     const free = (x, y) => chamber[y] === undefined || chamber[y][x] === '.'
@@ -71,10 +72,7 @@ require('../challenge')(async function * ({
     }
 
     while (count-- > 0) {
-      if (Date.now() - timer > 1000) {
-        timer = Date.now()
-        console.log(`Computing... ${count} ${chamber.length}`)
-      }
+      loop.log('Computing... {count} {length}', { count, length: chamber.length })
 
       const piece = pieces[pieceIndex]
       let x = 2
