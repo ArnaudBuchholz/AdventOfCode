@@ -2,7 +2,7 @@ require('../challenge')(async function * ({
   isSample,
   lines
 }) {
-  const buildLoopControl = await require('../lib/loop_control')
+  const { build: buildLoopControl } = await require('../lib/loop_control')
 
   let minX = Infinity
   let maxX = 0

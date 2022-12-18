@@ -1,7 +1,7 @@
 require('../challenge')(async function * ({
   lines
 }) {
-  const buildLoopControl = await require('../lib/loop_control')
+  const { build: buildLoopControl } = await require('../lib/loop_control')
   const { detectRepetitionPattern } = await require('../lib/array')
   const moves = lines[0].split('')
 
