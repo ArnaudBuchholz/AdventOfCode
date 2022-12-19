@@ -2,7 +2,7 @@ require('../challenge')(async function * ({
   assert,
   lines
 }) {
-  const { empty, extend, isInside } = await require('../lib/range')
+  const { empty, extend } = await require('../lib/range')
   const { build: buildLoopControl } = await require('../lib/loop_control')
   const { build: buildSpace } = await require('../lib/space')
 
