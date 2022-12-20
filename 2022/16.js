@@ -2,6 +2,8 @@ require('../challenge')(async function * ({
   isSample,
   lines
 }) {
+  const { shortest } = await require('../lib/graph')
+
   const rooms = lines.reduce((map, line) => {
     const match = line.match(/Valve (\w+) has flow rate=(\d+); tunnels? leads? to valves? (\w+(?:, \w+)*)/)
     const [, name, strRate, connects] = match
@@ -13,8 +15,25 @@ require('../challenge')(async function * ({
     return map
   }, {})
 
-  const valvesToOpen = Object.keys(rooms).filter(room => rooms[room].rate !== 0).length
+  const valvesToOpen = Object.keys(rooms).filter(room => rooms[room].rate !== 0)
   console.log(rooms, valvesToOpen)
+
+  // Build shortest path between all valves
+  const shortestPaths = {};
+  ['AA', ...valvesToOpen].forEach((from, fromIndex, array) => {
+    array.forEach((to, toIndex) => {
+      if (fromIndex > toIndex) {
+        shortestPaths[`${from}->${to}`] = shortest(from, to, room => rooms[room].to)
+      }
+    })
+  })
+
+  console.log(shortestPaths)
+
+  function solution1 () {
+    // Evaluate all possible orders for the valves to be opened
+
+  }
 
   function solution (maxTime, actorCount) {
     let timer = Date.now()
@@ -70,7 +89,7 @@ require('../challenge')(async function * ({
         continue
       }
 
-      if (opened.length === valvesToOpen) {
+      if (opened.length === valvesToOpen.length) {
         check(opened, released + (maxTime - time) * totalRate)
         continue
       }
@@ -87,7 +106,7 @@ require('../challenge')(async function * ({
           rate,
           to
         } = rooms[actorPos]
-  
+
         // move but avoid immediately turning back to previous room
         to
           .filter(room => room !== actorFrom)
@@ -155,7 +174,6 @@ require('../challenge')(async function * ({
                 totalRate: totalRate + open0.rate,
                 released
               })
-
             } else if (move0 && open1) {
               steps.push({
                 pos: [move0.to, pos[1]],
@@ -165,7 +183,6 @@ require('../challenge')(async function * ({
                 totalRate: totalRate + open1.rate,
                 released
               })
-
             } else if (move0 && move1) {
               steps.push({
                 pos: [move0.to, move1.to],
@@ -175,7 +192,6 @@ require('../challenge')(async function * ({
                 totalRate,
                 released
               })
-
             }
           })
         })
@@ -186,6 +202,6 @@ require('../challenge')(async function * ({
     return result.released
   }
 
-  yield solution(30, 1)
+  // yield solution(30, 1)
   // yield solution(26, 2)
 })
