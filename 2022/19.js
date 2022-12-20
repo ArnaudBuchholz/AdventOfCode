@@ -70,7 +70,7 @@ require('../challenge')(async function * ({
       loop.log('Processing... {length}', { length: states.length })
 
       const state = states.pop()
-      let {
+      const {
         stocks,
         rates,
         firsts,
@@ -111,7 +111,7 @@ require('../challenge')(async function * ({
             const consumed = empty()
             ++incRates[robot]
             Object.keys(recipe).forEach(material => {
-                consumed[material] += recipe[material]
+              consumed[material] += recipe[material]
             })
             nextStates.push({ incRates, consumed })
             break // Stop on highest building
@@ -130,13 +130,13 @@ require('../challenge')(async function * ({
           rates: [...rates],
           firsts: [...firsts],
           builds: [...builds],
-          minute,
+          minute
         }
         consumed.forEach((dec, material) => { newState.stocks[material] -= dec })
         incRates.forEach((inc, material) => {
           if (inc) {
-            if(rates[material] === 0) {
-                newState.firsts[material] = minute
+            if (rates[material] === 0) {
+              newState.firsts[material] = minute
             }
             newState.builds[material] = builds[material] + minute + ','
           }
