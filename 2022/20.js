@@ -1,11 +1,16 @@
-require('../challenge')(async function * ({
+require('../challenge')(async function* ({
   assert,
   isSample,
   numbers
 }) {
   console.log(numbers.join(','), numbers.length)
 
-  function mix (encrypted, number) {
+  // check if values are unique
+  numbers.forEach(number => {
+    assert.ok(numbers.filter(candidate => candidate === number).length === 1, 'values are unique')
+  })
+
+  function mix(encrypted, number) {
     const startingPos = encrypted.indexOf(number)
     assert.ok(startingPos !== -1)
     const { length } = encrypted
@@ -48,7 +53,7 @@ require('../challenge')(async function * ({
   check([2, 3, -1], -1, [2, -1, 3])
 
   check([-1, 2, 3, 4], -1, [2, 3, -1, 4])
-  check([2, -1, 3, 4], -1, [2, 3, 4, -1]) 
+  check([2, -1, 3, 4], -1, [2, 3, 4, -1])
   check([2, 3, -1, 4], -1, [2, -1, 3, 4])
   check([2, 3, 4, -1], -1, [2, 3, -1, 4])
 
@@ -70,10 +75,11 @@ require('../challenge')(async function * ({
   }
 
   const posOf0 = decrypted.indexOf(0)
+  console.log()
   const first = decrypted[(posOf0 + 1000) % decrypted.length]
   const second = decrypted[(posOf0 + 2000) % decrypted.length]
   const third = decrypted[(posOf0 + 3000) % decrypted.length]
-  console.log('1000th :', first, '\n2000th :', second, '\n3000th :', third)
+  console.log('Position of 0 :', posOf0, '\n1000th :', first, '\n2000th :', second, '\n3000th :', third)
 
-  yield first + second + third // > 4060
+  yield first + second + third // > 4060 > 4640
 })
