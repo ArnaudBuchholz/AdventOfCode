@@ -18,11 +18,11 @@
   },
   "homepage": "https://github.com/ArnaudBuchholz/AdventOfCode#readme",
   "dependencies": {
-    "reserve": "^1.15.2",
-    "standard": "^17.0.0"
+    "reserve": "^1.15.5",
+    "standard": "^17.1.0"
   },
   "devDependencies": {
-    "jest": "^29.3.1"
+    "jest": "^29.7.0"
   },
   "standard": {
     "env": [
