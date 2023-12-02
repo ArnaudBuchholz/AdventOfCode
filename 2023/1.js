@@ -20,7 +20,7 @@ require('../challenge')(function * ({
     for (let pos = 0; pos < substituted.length; ++pos) {
       const stringAtPos = substituted.substring(pos)
       let number = 1
-      for (let spelling of ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']) {
+      for (const spelling of ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']) {
         if (stringAtPos.startsWith(spelling)) {
           substituted = substituted.substring(0, pos) + number + substituted.substring(pos)
           pos++ // skip injected digit

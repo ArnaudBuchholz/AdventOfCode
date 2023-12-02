@@ -45,4 +45,3 @@ require('../challenge')(function * ({
     return total + red * green * blue
   }, 0)
 })
-  

@@ -30,10 +30,10 @@ require('../challenge')(async function * ({
 
   console.log(shortestPaths)
 
-  function solution1 () {
-    // Evaluate all possible orders for the valves to be opened
+  // function solution1 () {
+  //   // Evaluate all possible orders for the valves to be opened
 
-  }
+  // }
 
   function solution (maxTime, actorCount) {
     let timer = Date.now()
@@ -201,6 +201,9 @@ require('../challenge')(async function * ({
     console.log(checked, result)
     return result.released
   }
+
+  console.log(solution)
+  yield 'Not working...'
 
   // yield solution(30, 1)
   // yield solution(26, 2)

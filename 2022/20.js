@@ -1,4 +1,4 @@
-require('../challenge')(async function* ({
+require('../challenge')(async function * ({
   assert,
   isSample,
   numbers
@@ -10,7 +10,7 @@ require('../challenge')(async function* ({
     assert.ok(numbers.filter(candidate => candidate === number).length === 1, 'values are unique')
   })
 
-  function mix(encrypted, number) {
+  function mix (encrypted, number) {
     const startingPos = encrypted.indexOf(number)
     assert.ok(startingPos !== -1)
     const { length } = encrypted
