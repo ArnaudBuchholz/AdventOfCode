@@ -2,7 +2,7 @@ require('../challenge')(async function * ({
   lines,
   verbose
 }) {
-  const { getContained, getIntersection } = await require('../lib/range')
+  const { getIntersection } = await require('../lib/range')
 
   const seeds = lines[0].split(':')[1].trim().split(' ').map(Number)
 
@@ -62,7 +62,7 @@ require('../challenge')(async function * ({
       const { destination, source, length } = mappingDef.ranges[range]
       const intersect = getIntersection([from, to], [source, source + length - 1])
       if (intersect === null) {
-          stack.push({
+        stack.push({
           seed,
           from,
           to,
@@ -89,7 +89,7 @@ require('../challenge')(async function * ({
           seed,
           from,
           to: intersect[0] - 1,
-          mapping: mapping,
+          mapping,
           range: range + 1
         })
       }
@@ -98,7 +98,7 @@ require('../challenge')(async function * ({
           seed,
           from: intersect[1] + 1,
           to,
-          mapping: mapping,
+          mapping,
           range: range + 1
         })
       }
@@ -124,4 +124,3 @@ require('../challenge')(async function * ({
   }
   yield minLocation
 })
-  
