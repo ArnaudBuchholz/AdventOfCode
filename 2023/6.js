@@ -12,15 +12,24 @@ require('../challenge')(async function * ({
   }
 
   function getNumberOfWaysToWin (time, distance) {
-    let count = 0
-    for (let hold = 1; hold < time; ++hold) {
-      const timeLeft = time - hold
-      const resultDistance = timeLeft * hold
-      if (resultDistance > distance) {
-        ++count
-      }
-    }
-    return count
+    /**
+     * Be x the number of ms you hold the button
+     * Resulting distance is : (time - x) * x
+     * We want this to be greater than distance :
+     * -x^2 + x*time - distance > 0
+     * 𝚫 = b^2 - 4*a*c
+     * with a = -1
+     *      b = time
+     *      c = -distance
+     * 𝚫 = time^2 - 4*distance
+     * xStart = (-time + √𝚫)/-2
+     * xStop = (-time - √𝚫)/-2
+     */
+    const delta = time * time - 4 * distance
+    // assuming 𝚫 is always positive
+    const xStart = Math.ceil((-time + Math.sqrt(delta)) / -2) 
+    const xStop = Math.ceil((-time - Math.sqrt(delta)) / -2)
+    return xStop - xStart
   }
 
   yield times.reduce((total, time, index) => {
