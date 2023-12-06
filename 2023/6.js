@@ -1,8 +1,7 @@
-require('../challenge')(async function * ({
+require('../challenge')(function * ({
   lines,
   verbose
 }) {
-  // const { getIntersection } = await require('../lib/range')
   const times = lines[0].split(':')[1].split(/\s+/).slice(1).map(Number)
   const distances = lines[1].split(':')[1].split(/\s+/).slice(1).map(Number)
 
