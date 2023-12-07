@@ -26,7 +26,7 @@ require('../challenge')(function * ({
      */
     const delta = time * time - 4 * distance
     // assuming 𝚫 is always positive
-    const xStart = Math.ceil((-time + Math.sqrt(delta)) / -2) 
+    const xStart = Math.ceil((-time + Math.sqrt(delta)) / -2)
     const xStop = Math.ceil((-time - Math.sqrt(delta)) / -2)
     return xStop - xStart
   }
