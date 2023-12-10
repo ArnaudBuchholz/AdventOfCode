@@ -129,6 +129,10 @@ require('../challenge')(function * ({
 
   yield loops
 
+  if (verbose) {
+    console.log('Step 2')
+  }
+
   const linesOfStep2 = linesOfStep1.map((line, y) => {
     return line.replace(/[^SX*]/g, '.').split('').map((mark, x) => {
       if (mark !== '.') {
@@ -145,10 +149,6 @@ require('../challenge')(function * ({
   }
 
   let insideTiles = 0
-
-  if (verbose) {
-    console.log('Step 2')
-  }
 
   linesOfStep2.forEach((line, y) => {
     let state = 'out' // 'in', 'lower-in', 'upper-in'
