@@ -2,10 +2,11 @@ const { accessSync: access, readFileSync: readFile } = require('fs')
 const { join, relative, sep } = require('path')
 const assert = require('assert')
 
-const [, script, additional] = process.argv
+const [, script, ...args] = process.argv
 const [year, day] = relative(__dirname, script).split(sep)
-const folder = additional && additional.startsWith('-sample') ? 'sample' : 'input'
-const sampleIndex = (/-sample(\d)/.exec(additional) || [])[1]
+const sample = args.filter(arg => arg.startsWith('-sample'))[0]
+const folder = sample ? 'sample' : 'input'
+const sampleIndex = (/-sample(\d)/.exec(sample) || [])[1]
 const fileName = join(__dirname, year, folder, `${day}${sampleIndex ? '.' + sampleIndex : ''}.txt`)
 
 try {
