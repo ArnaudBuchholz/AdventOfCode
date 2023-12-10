@@ -130,8 +130,8 @@ require('../challenge')(function * ({
   yield loops
 
   const linesOfStep2 = linesOfStep1.map((line, y) => {
-    return line.replace(/[^SX*]/g, '.').split('').map((point, x) => {
-      if (point !== '.') {
+    return line.replace(/[^SX*]/g, '.').split('').map((mark, x) => {
+      if (mark !== '.') {
         return lines[y][x]
       }
       return '.'
@@ -139,21 +139,53 @@ require('../challenge')(function * ({
   })
   linesOfStep2[sy] = linesOfStep2[sy].substring(0, sx) + shapeOfS + linesOfStep2[sy].substring(sx + 1)
 
-  const plotStep2 = ({ x, y }, mark = '*') => {
+  const plotStep2 = (x, y, mark = 'I') => {
     const line = linesOfStep2[y]
     linesOfStep2[y] = line.substring(0, x) + mark + line.substring(x + 1)
   }
 
-
+  let insideTiles = 0
 
   if (verbose) {
     console.log('Step 2')
-    console.log(linesOfStep2.map(line => line
-      .replace(/F|J|7|L/g, match => {
+  }
+
+  linesOfStep2.forEach((line, y) => {
+    let state = 'out' // 'in', 'lower-in', 'upper-in'
+    line.split('').forEach((mark, x) => {
+      if (mark === '.') {
+        if (state !== 'in') {
+          return
+        }
+        plotStep2(x, y)
+        ++insideTiles
+        return
+      }
+
+      const nextState = {
+        'in|': 'out',
+        'out|': 'in',
+        inF: 'upper-in',
+        outF: 'lower-in',
+        'lower-inJ': 'in',
+        'upper-inJ': 'out',
+        'lower-in7': 'out',
+        'upper-in7': 'in',
+        inL: 'lower-in',
+        outL: 'upper-in'
+      }[state + mark]
+
+      if (nextState !== undefined) {
+        state = nextState
+      }
+    })
+    if (verbose) {
+      console.log(linesOfStep2[y].replace(/F|J|7|L/g, match => {
         const pos = 'FJ7L'.indexOf(match)
         return '┌┘┐└'[pos]
       }))
-      .join('\n')
-    )
-  }
+    }
+  })
+
+  yield insideTiles
 })
