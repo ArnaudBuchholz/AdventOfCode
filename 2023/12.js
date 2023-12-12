@@ -1,7 +1,9 @@
-require('../challenge')(function * ({
+require('../challenge')(async function * ({
   lines,
   verbose
 }) {
+  const { gcd } = await require('../lib/math')
+
   function getNumberOfArrangements (line, expected) {
     const parts = line.split(' ')
     const stack = [{
@@ -25,6 +27,7 @@ require('../challenge')(function * ({
       // Exit conditions
       if (groups.length === 0) {
         if (!pattern.includes('#')) {
+          // console.log(iterations, ':', processed, '|', pattern)
           ++arrangements // YES
         }
         continue
@@ -70,9 +73,9 @@ require('../challenge')(function * ({
       }
     }
 
-    if (verbose) {
-      console.log(line, '➔', arrangements, '(', iterations, ')')
-    }
+    // if (verbose) {
+    //   console.log(line, '➔', arrangements, '(', iterations, ')')
+    // }
     if (expected !== undefined && expected !== arrangements) {
       throw new Error('failed')
     }
@@ -88,21 +91,40 @@ require('../challenge')(function * ({
   // getNumberOfArrangements('.???#?#????..????. 1,4,1,1,2,1')
   // getNumberOfArrangements('??????????? 2,3,2', 10)
 
-  yield lines.reduce((total, line) => total + getNumberOfArrangements(line), 0)
-
-  const x5 = line => {
+  const x2 = line => {
     const [p, v] = line.split(' ')
-    return `${p}?${p}?${p}?${p}?${p} ${v},${v},${v},${v},${v}`
+    return `${p}?${p} ${v},${v}`
   }
 
-  // getNumberOfArrangements(x5('???.### 1,1,3'), 1)
-  // getNumberOfArrangements(x5('.??..??...?##. 1,1,3'), 16384)
-  // getNumberOfArrangements(x5('?#?#?#?#?#?#?#? 1,3,1,6'), 1)
-  // getNumberOfArrangements(x5('????.#...#... 4,1,1'), 16)
-  // getNumberOfArrangements(x5('????.######..#####. 1,6,5'), 2500)
-  // getNumberOfArrangements(x5('?###???????? 3,2,1'), 506250)
+  // getNumberOfArrangements(x2('????.#...#... 4,1,1', 1))
+  // getNumberOfArrangements(x2('?###???????? 3,2,1'))
 
-  // getNumberOfArrangements(x5('??????????? 2,3,2'))
+  yield lines.reduce((total, line) => total + getNumberOfArrangements(line), 0)
 
-  yield lines.reduce((total, line) => total + getNumberOfArrangements(x5(line)), 0)
+  const getNumberOfArrangementsX5 = (line, expected) => {
+    const one = getNumberOfArrangements(line)
+    const two = getNumberOfArrangements(x2(line))
+    const geaterCommonDenominator = gcd(one, two)
+    const arrangements = two * two * two * two / (geaterCommonDenominator * geaterCommonDenominator * geaterCommonDenominator)
+    if (verbose) {
+      console.log(line, one, two, geaterCommonDenominator, arrangements)
+    }
+    if (arrangements % 1 !== 0) {
+      throw new Error('failed')
+    }
+    if (expected !== undefined && expected !== arrangements) {
+      throw new Error('failed')
+    }
+    return arrangements
+  }
+
+  getNumberOfArrangementsX5('???.### 1,1,3', 1)
+  getNumberOfArrangementsX5('.??..??...?##. 1,1,3', 16384)
+  getNumberOfArrangementsX5('?#?#?#?#?#?#?#? 1,3,1,6', 1)
+  getNumberOfArrangementsX5('????.#...#... 4,1,1', 16)
+  getNumberOfArrangementsX5('????.######..#####. 1,6,5', 2500)
+  getNumberOfArrangementsX5('?###???????? 3,2,1', 506250)
+
+  // 18672550515010077000 is too high
+  // yield lines.reduce((total, line) => total + getNumberOfArrangementsX5(line), 0)
 })
