@@ -20,7 +20,7 @@ require('../challenge')(function * ({
       } = stack.pop()
 
       ++iterations
-      console.log(iterations, ':', processed, '|', pattern, groups)
+      // console.log(iterations, ':', processed, '|', pattern, groups)
 
       // Exit conditions
       if (groups.length === 0) {
