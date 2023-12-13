@@ -73,9 +73,9 @@ require('../challenge')(async function * ({
       }
     }
 
-    // if (verbose) {
-    //   console.log(line, '➔', arrangements, '(', iterations, ')')
-    // }
+    if (verbose) {
+      console.log(line, '➔', arrangements, '(', iterations, ')')
+    }
     if (expected !== undefined && expected !== arrangements) {
       throw new Error('failed')
     }
