@@ -1,78 +1,61 @@
-require('../challenge')(async function * ({
+require('../challenge')(function * ({
   lines,
   verbose
 }) {
-  const { gcd } = await require('../lib/math')
+  const precomputed = new Map()
 
   function getNumberOfArrangements (line, expected) {
-    const parts = line.split(' ')
-    const stack = [{
-      processed: '',
-      pattern: parts[0],
-      groups: parts[1].split(',').map(Number)
-    }]
-    let arrangements = 0
+    const [pattern, rawGroups] = line.split(' ')
+    const groups = rawGroups.split(',').map(Number)
+
     let iterations = 0
 
-    while (stack.length) {
-      const {
-        processed,
-        pattern,
-        groups
-      } = stack.pop()
-
+    function count (pattern, groups) {
       ++iterations
-      // console.log(iterations, ':', processed, '|', pattern, groups)
 
-      // Exit conditions
+      pattern = pattern.replace(/^\.+|\.+$/, '') // remove starting & ending .
+      if (pattern === '') {
+        if (groups.length === 0) {
+          return 1 // all done
+        } else {
+          return 0 // unfound groups
+        }
+      }
+
       if (groups.length === 0) {
-        if (!pattern.includes('#')) {
-          // console.log(iterations, ':', processed, '|', pattern)
-          ++arrangements // YES
+        if (pattern.includes('#')) {
+          return 0 // unmatched groups
+        } else {
+          return 1 // all done
         }
-        continue
-      } else if (pattern.length === 0) {
-        continue
       }
 
-      const checkGroup = () => {
-        const [count] = groups
-        if (pattern.length < count) {
-          return // NOPE
-        }
-        if (pattern.substring(0, count).includes('.')) {
-          return // NOPE
-        }
-        if (pattern[count] === '#') {
-          return // NOPE
-        }
-        stack.push({
-          processed: processed + ''.padStart(count, '#') + '.',
-          pattern: pattern.substring(count + 1), // consume . or ?
-          groups: groups.slice(1)
-        })
+      const key = pattern + '|' + groups.join(',')
+      if (precomputed.has(key)) {
+        return precomputed.get(key)
       }
 
-      const skipDotsMatch = pattern.match(/^\.+/)
-      if (skipDotsMatch) {
-        const skipDots = skipDotsMatch[0]
-        stack.push({
-          processed: processed + skipDots,
-          pattern: pattern.substring(skipDots.length),
-          groups
-        })
-      } else if (pattern[0] === '#') {
-        checkGroup()
-      } else { // ?
-        stack.push({
-          processed: processed + '.',
-          pattern: pattern.substring(1),
-          groups
-        })
-        checkGroup()
+      let arrangements = 0
+
+      const startWithFullGroup = pattern.match(/^#+(?=\.|$)/) // . or end of string included
+      if (startWithFullGroup) {
+        const [firstGroupSize, ...otherGroups] = groups
+        if (startWithFullGroup[0].length === firstGroupSize) {
+          arrangements += count(pattern.substring(firstGroupSize), otherGroups)
+        }
+      } else if (pattern.includes('?')) {
+        const totalOfGroups = groups.reduce((a, b) => a + b)
+        arrangements += count(pattern.replace('?', '.'), groups)
+        if (pattern.replace(/[^#]/g, '').length < totalOfGroups) {
+          arrangements += count(pattern.replace('?', '#'), groups)
+        }
       }
+
+      precomputed.set(key, arrangements)
+      return arrangements
     }
 
+    const arrangements = count(pattern, groups)
     if (verbose) {
       console.log(line, '➔', arrangements, '(', iterations, ')')
     }
@@ -91,40 +74,20 @@ require('../challenge')(async function * ({
   // getNumberOfArrangements('.???#?#????..????. 1,4,1,1,2,1')
   // getNumberOfArrangements('??????????? 2,3,2', 10)
 
-  const x2 = line => {
-    const [p, v] = line.split(' ')
-    return `${p}?${p} ${v},${v}`
-  }
-
-  // getNumberOfArrangements(x2('????.#...#... 4,1,1', 1))
-  // getNumberOfArrangements(x2('?###???????? 3,2,1'))
-
   yield lines.reduce((total, line) => total + getNumberOfArrangements(line), 0)
 
-  const getNumberOfArrangementsX5 = (line, expected) => {
-    const one = getNumberOfArrangements(line)
-    const two = getNumberOfArrangements(x2(line))
-    const geaterCommonDenominator = gcd(one, two)
-    const arrangements = two * two * two * two / (geaterCommonDenominator * geaterCommonDenominator * geaterCommonDenominator)
-    if (verbose) {
-      console.log(line, one, two, geaterCommonDenominator, arrangements)
-    }
-    if (arrangements % 1 !== 0) {
-      throw new Error('failed')
-    }
-    if (expected !== undefined && expected !== arrangements) {
-      throw new Error('failed')
-    }
-    return arrangements
+  const x5 = line => {
+    const [p, v] = line.split(' ')
+    return `${p}?${p}?${p}?${p}?${p} ${v},${v},${v},${v},${v}`
   }
 
-  getNumberOfArrangementsX5('???.### 1,1,3', 1)
-  getNumberOfArrangementsX5('.??..??...?##. 1,1,3', 16384)
-  getNumberOfArrangementsX5('?#?#?#?#?#?#?#? 1,3,1,6', 1)
-  getNumberOfArrangementsX5('????.#...#... 4,1,1', 16)
-  getNumberOfArrangementsX5('????.######..#####. 1,6,5', 2500)
-  getNumberOfArrangementsX5('?###???????? 3,2,1', 506250)
+  // getNumberOfArrangements(x5('???.### 1,1,3'), 1)
+  // getNumberOfArrangements(x5('.??..??...?##. 1,1,3'), 16384)
+  // getNumberOfArrangements(x5('?#?#?#?#?#?#?#? 1,3,1,6'), 1)
+  // getNumberOfArrangements(x5('????.#...#... 4,1,1'), 16)
+  // getNumberOfArrangements(x5('????.######..#####. 1,6,5'), 2500)
+  // getNumberOfArrangements(x5('?###???????? 3,2,1'), 506250)
+  // getNumberOfArrangements(x5('???????????? 3,2,1'))
 
-  // 18672550515010077000 is too high
-  // yield lines.reduce((total, line) => total + getNumberOfArrangementsX5(line), 0)
+  yield lines.reduce((total, line) => total + getNumberOfArrangements(x5(line)), 0)
 })
