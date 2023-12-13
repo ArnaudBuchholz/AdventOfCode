@@ -31,11 +31,13 @@ try {
         assert,
         option: ({ label, cmd }) => process.argv.includes(`-${cmd}`)
       })
+      const start = performance.now()
       const solutions = []
       for await (const solution of genSolutions) {
         solutions.push(solution)
       }
-      console.log('Solutions', solutions)
+      console.log('Solutions      ', solutions)
+      console.log('Time spent (ms)', Math.ceil(performance.now() - start))
     } catch (e) {
       console.error(e)
       process.exit(-1)
