@@ -124,7 +124,6 @@ require('../challenge')(async function * ({
       console.log('\n' + pattern.join('\n'))
       throw new Error('Unable to find smudge')
     }, 0)
-    // 22862 is too low
   }
   yield part2(patterns)
 })
