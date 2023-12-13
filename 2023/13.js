@@ -16,14 +16,11 @@ require('../challenge')(async function * ({
 
   const column = (pattern, x) => pattern.reduce((cols, line) => [...cols, line[x]], []).join('')
 
-  yield patterns.reduce((total, pattern) => {
-    if (verbose) {
-      console.log('\n' + pattern.join('\n'))
-    }
+  function getReflections (pattern) {
     const width = pattern[0].length
     const height = pattern.length
 
-    let horizontal = -1
+    const mirrorOnX = []
     for (let x = 0; x < width - 1; ++x) {
       const max = Math.min(x + 1, width - x - 1)
       let i
@@ -35,15 +32,11 @@ require('../challenge')(async function * ({
         }
       }
       if (i === max) {
-        horizontal = x + 1
-        if (verbose) {
-          console.log('horizontal', horizontal)
-        }
-        break
+        mirrorOnX.push(x + 1)
       }
     }
 
-    let vertical = -1
+    const mirrorOnY = []
     for (let y = 0; y < height - 1; ++y) {
       const max = Math.min(y + 1, height - y - 1)
       let i
@@ -53,21 +46,85 @@ require('../challenge')(async function * ({
         }
       }
       if (i === max) {
-        vertical = y + 1
-        if (verbose) {
-          console.log('vertical', vertical)
-        }
-        break
+        mirrorOnY.push(y + 1)
       }
     }
 
-    if (horizontal !== -1) {
-      total += horizontal
-    }
-    if (vertical !== -1) {
-      total += 100 * vertical
+    if (verbose) {
+      console.log('reflections', 'x', mirrorOnX, 'y', mirrorOnY)
     }
 
-    return total
-  }, 0)
+    return {
+      x: mirrorOnX,
+      y: mirrorOnY
+    }
+  }
+
+  function part1 (patterns) {
+    return patterns.reduce((total, pattern) => {
+      if (verbose) {
+        console.log('\n' + pattern.join('\n'))
+      }
+      const { x, y } = getReflections(pattern)
+      if (x.length > 1) {
+        throw new Error('Unexpected')
+      }
+      if (x[0] !== undefined) {
+        total += x[0]
+      }
+      if (y.length > 1) {
+        throw new Error('Unexpected')
+      }
+      if (y[0] !== undefined) {
+        total += 100 * y[0]
+      }
+      return total
+    }, 0)
+  }
+  yield part1(patterns)
+
+  function part2 (patterns) {
+    return patterns.reduce((total, pattern) => {
+      if (verbose) {
+        console.log('\n' + pattern.join('\n'))
+      }
+
+      const { x: [initialX], y: [initialY] } = getReflections(pattern)
+
+      const width = pattern[0].length
+      const height = pattern.length
+      for (let y = 0; y < height; ++y) {
+        for (let x = 0; x < width; ++x) {
+          const smudgedPattern = [...pattern]
+          const smudge = smudgedPattern[y][x] === '.' ? '#' : '.'
+          smudgedPattern[y] = smudgedPattern[y].substring(0, x) + smudge + smudgedPattern[y].substring(x + 1)
+
+          if (verbose) {
+            console.log(x, y, '\n' + smudgedPattern.join('\n'))
+          }
+          const { x: reflectionsOnX, y: reflectionsOnY } = getReflections(smudgedPattern)
+
+          const smudgedX = reflectionsOnX.filter(x => x !== initialX)[0]
+          if (smudgedX !== undefined) {
+            if (verbose) {
+              console.log('@', x, ',', y, 'new reflection on X', smudgedX)
+            }
+            return total + smudgedX
+          }
+
+          const smudgedY = reflectionsOnY.filter(x => x !== initialY)[0]
+          if (smudgedY !== undefined) {
+            if (verbose) {
+              console.log('@', x, ',', y, 'new reflection on Y', smudgedY)
+            }
+            return total + smudgedY * 100
+          }
+        }
+      }
+      console.log('\n' + pattern.join('\n'))
+      throw new Error('Unable to find smudge')
+    }, 0)
+    // 22862 is too low
+  }
+  yield part2(patterns)
 })
