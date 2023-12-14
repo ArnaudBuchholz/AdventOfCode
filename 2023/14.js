@@ -110,16 +110,9 @@ require('../challenge')(async function * ({
     results.push(result.join('\n'))
     loads.push(load(result))
   }
-  console.log(loads)
   const { skip, length } = detectRepetitionPattern(results)
-
-  if (verbose) {
-    console.log({ skip, length })
-  }
-
   const finalResultIndex = (1000000000 - skip) % length
-  const finalResult = results[finalResultIndex].split('\n')
+  const finalResult = results[finalResultIndex + skip - 1].split('\n')
 
   yield load(finalResult)
-  // 99905 too low
 })
