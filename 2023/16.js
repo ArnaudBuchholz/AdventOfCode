@@ -60,26 +60,36 @@ require('../challenge')(async function * ({
     a[y] = a[y].substring(0, x) + c + a[y].substring(x + 1)
   }
 
-  const loop = buildLoopControl()
-  const tiles = [...lines]
-  const beams = [{ x: 0, y: 0, dir: 'R' }]
-  const cache = []
-  while (beams.length) {
-    try {
-      loop.log('Beaming... {length}', {
-        length: beams.length
+  function calculate (initial) {
+    const loop = buildLoopControl()
+    const tiles = [...lines]
+    const beams = [initial]
+    const cache = []
+    while (beams.length) {
+      loop.log('Beaming from ({x},{y},{dir})... {length}', {
+        length: beams.length,
+        ...initial
       })
-    } catch (e) {
-      console.log(tiles.join('\n'))
-      throw e
+      const beam = beams.pop()
+      plot(tiles, beam.x, beam.y, '#')
+      beams.push(...next(beam, cache))
     }
-    const beam = beams.pop()
-    plot(tiles, beam.x, beam.y, '#')
-    beams.push(...next(beam, cache))
+    return tiles.reduce((total, line) => total + line.replace(/[^#]/g, '').length, 0)
   }
 
-  if (verbose) {
-    console.log(tiles.join('\n'))
+  yield calculate({ x: 0, y: 0, dir: 'R' })
+
+  let max = 0
+  const loop = buildLoopControl()
+  for (let x = 0; x < width; ++x) {
+    loop.log('Calculating part2 (x)...')
+    max = Math.max(max, calculate({ x, y: 0, dir: 'D' }))
+    max = Math.max(max, calculate({ x, y: height - 1, dir: 'U' }))
   }
-  yield tiles.reduce((total, line) => total + line.replace(/[^#]/g, '').length, 0)
+  for (let y = 0; y < height; ++y) {
+    loop.log('Calculating part2 (y)...')
+    max = Math.max(max, calculate({ x: 0, y, dir: 'R' }))
+    max = Math.max(max, calculate({ x: width - 1, y, dir: 'L' }))
+  }
+  yield max
 })
