@@ -33,7 +33,7 @@ require('../challenge')(async function * ({
       'U\\': () => [[x - 1, y, 'L']],
       'D\\': () => [[x + 1, y, 'R']],
       'L\\': () => [[x, y - 1, 'U']],
-      'R\\': () => [[x, y + 1, 'D']],
+      'R\\': () => [[x, y + 1, 'D']]
     }
     const beams = moves[dir + tile]()
     if (!beams) {
@@ -53,7 +53,7 @@ require('../challenge')(async function * ({
         cache.push(key)
         return true
       })
-      .map(([x, y, dir]) => ({x, y, dir}))
+      .map(([x, y, dir]) => ({ x, y, dir }))
   }
 
   const plot = (a, x, y, c) => {
@@ -62,9 +62,9 @@ require('../challenge')(async function * ({
 
   const loop = buildLoopControl()
   const tiles = [...lines]
-  const beams = [{x: 0, y: 0, dir: 'R'}]
+  const beams = [{ x: 0, y: 0, dir: 'R' }]
   const cache = []
-  while(beams.length) {
+  while (beams.length) {
     try {
       loop.log('Beaming... {length}', {
         length: beams.length
@@ -83,4 +83,3 @@ require('../challenge')(async function * ({
   }
   yield tiles.reduce((total, line) => total + line.replace(/[^#]/g, '').length, 0)
 })
-  
