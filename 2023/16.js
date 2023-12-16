@@ -3,6 +3,7 @@ require('../challenge')(async function * ({
   verbose
 }) {
   const { build: buildLoopControl } = await require('../lib/loop_control')
+  const { plot } = await require('../lib/array')
 
   const width = lines[0].length
   const height = lines.length
@@ -54,10 +55,6 @@ require('../challenge')(async function * ({
         return true
       })
       .map(([x, y, dir]) => ({ x, y, dir }))
-  }
-
-  const plot = (a, x, y, c) => {
-    a[y] = a[y].substring(0, x) + c + a[y].substring(x + 1)
   }
 
   function calculate (initial) {
