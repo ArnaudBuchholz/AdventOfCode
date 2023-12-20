@@ -8,6 +8,25 @@ require('../challenge')(async function * ({
   class Component {
     static #map = {}
 
+    static setup () {
+      lines.forEach(line => {
+        const [, type, name, links] = line.match(/^(%|&)?(\w+) -> (.*)$/)
+        let Type
+        if (type === '%') {
+          Type = FlipFlop
+        } else if (type === '&') {
+          Type = Conjunction
+        } else if (name === 'broadcaster') {
+          Type = Broadcaster
+        } else {
+          throw new Error(`Unexpected input : ${line}`)
+        }
+        const component = new Type(name, links.split(', '))
+        Component.add(component)
+      })
+      Component.connectAll()
+    }
+
     static get broadcaster () {
       return this.#map.broadcaster
     }
@@ -20,23 +39,29 @@ require('../challenge')(async function * ({
       return this.#map[name]
     }
 
+    static forEach (callback) {
+      Object.values(this.#map).forEach(callback)
+    }
+
     static connectAll () {
-      Object.values(this.#map)
-        .forEach(component => {
-          component.#links.forEach(name => {
-            let linkedComponent = Component.#map[name]
-            if (linkedComponent === undefined) {
-              linkedComponent = new Silent(name, [])
-              Component.add(linkedComponent)
-            }
-            component.#connections.push(linkedComponent)
-            linkedComponent.addInput(component.name)
-          })
+      Component.forEach(component => {
+        component.#links.forEach(name => {
+          let linkedComponent = Component.#map[name]
+          if (linkedComponent === undefined) {
+            linkedComponent = new Silent(name, [])
+            Component.add(linkedComponent)
+          }
+          component.#connections.push(linkedComponent)
+          linkedComponent.addInput(component.name)
         })
+      })
     }
 
     static reset () {
-      Object.values(this.#map).forEach(component => component.reset())
+      Component.forEach(component => {
+        component.reset()
+        delete component.pulse
+      })
     }
 
     static report () {
@@ -173,39 +198,16 @@ require('../challenge')(async function * ({
     }
   }
 
-  lines.forEach(line => {
-    const [, type, name, links] = line.match(/^(%|&)?(\w+) -> (.*)$/)
-    let Type
-    if (type === '%') {
-      Type = FlipFlop
-    } else if (type === '&') {
-      Type = Conjunction
-    } else if (name === 'broadcaster') {
-      Type = Broadcaster
-    } else {
-      throw new Error(`Unexpected input : ${line}`)
-    }
-    const component = new Type(name, links.split(', '))
-    Component.add(component)
-  })
-  Component.connectAll()
-
+  Component.setup()
   if (verbose) {
     Component.report()
   }
 
   const { broadcaster } = Component
   function pushButton () {
-    let [low, high] = [0, 0]
     const signals = broadcaster.pulse('button', false)
-    ++low
     while (signals.length) {
       const { from, to, pulse } = signals.shift()
-      if (pulse) {
-        ++high
-      } else {
-        ++low
-      }
       if (verbose) {
         console.log(`${from} -${pulse ? 'high' : 'low'}-> ${to}`)
       }
@@ -215,14 +217,22 @@ require('../challenge')(async function * ({
         signals.push(signal)
       }
     }
-    return { low, high }
   }
 
   let [totalLow, totalHigh] = [0, 0]
+  Component.forEach(component => {
+    const pulse = component.pulse
+    component.pulse = function (from, high) {
+      if (high) {
+        ++totalHigh
+      } else {
+        ++totalLow
+      }
+      return pulse.call(this, from, high)
+    }
+  })
   for (let i = 0; i < 1000; ++i) {
-    const { low, high } = pushButton()
-    totalLow += low
-    totalHigh += high
+    pushButton()
   }
   yield totalLow * totalHigh
 
