@@ -96,6 +96,10 @@ require('../challenge')(async function * ({
       return this.constructor.name
     }
 
+    get links () {
+      return [...this.#links]
+    }
+
     get connections () {
       return [...this.#connections]
     }
@@ -239,6 +243,28 @@ require('../challenge')(async function * ({
   if (isSample) {
     return
   }
+
+  let lastConjunctionBeforeRx
+  Component.forEach(component => {
+    if (component.links.includes('rx')) {
+      lastConjunctionBeforeRx = component
+      console.log(`${component.name} (${component.type})`)
+    }
+  })
+  if (lastConjunctionBeforeRx.type !== 'Conjunction') {
+    throw new Error('Expected component before rx to be a Conjunction')
+  }
+  const inputsOflastConjunctionBeforeRx = []
+  Component.forEach(component => {
+    if (component.links.includes(lastConjunctionBeforeRx.name)) {
+      inputsOflastConjunctionBeforeRx.push(component)
+      console.log(`${component.name} (${component.type})`)
+    }
+  })
+
+  // TODO: Analyze frequencies of signals for the different inputs
+
+  throw new Error()
 
   Component.reset()
   let [rxLowPulse, rxHighPulse] = [0, 0]
