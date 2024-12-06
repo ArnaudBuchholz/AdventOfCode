@@ -3,7 +3,7 @@ require('../challenge')(async function * ({
   isSample,
   verbose
 }) {
-  const { build: buildLoopControl } = await require('../lib/loop_control')
+  // const { build: buildLoopControl } = await require('../lib/loop_control')
 
   class Component {
     static #map = {}
@@ -265,7 +265,7 @@ require('../challenge')(async function * ({
   // TODO: Analyze frequencies of signals for the different inputs
 
   throw new Error()
-
+/*
   Component.reset()
   let [rxLowPulse, rxHighPulse] = [0, 0]
   // let states = new Set()
@@ -295,4 +295,5 @@ require('../challenge')(async function * ({
     // states.add(state)
   }
   yield pressCount
+*/
 })
