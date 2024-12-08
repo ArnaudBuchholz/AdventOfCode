@@ -1,4 +1,4 @@
-require('../challenge')(async function * ({
+require('../challenge')(function * ({
   lines,
   verbose
 }) {
