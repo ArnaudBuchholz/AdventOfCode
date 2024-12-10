@@ -34,13 +34,10 @@ require('../challenge')(function * ({
     { dx: 1, dy: 0 }
   ]
 
-  function part1 () {
-    if (verbose) {
-      console.log('Part 1 :\n--------')
-    }
-    let total = 0
+  function findTrailheads () {
+    const trailheads = {}
     for (const { x: startX, y: startY } of starts) {
-      const finals = new Set()
+      const trailends = {}
       const steps = [{ x: startX, y: startY, h: 0 }]
       while (steps.length) {
         const { x, y, h } = steps.shift()
@@ -49,44 +46,10 @@ require('../challenge')(function * ({
             const newH = lines[y + dy][x + dx]
             if (newH === 9) {
               const id = `${x + dx},${y + dy}`
-              if (!finals.has(id)) {
-                finals.add(id)
-              }
-            } else {
-              steps.push({ x: x + dx, y: y + dy, h: newH })
-            }
-          }
-        }
-      }
-      if (verbose) {
-        console.log({ x: startX, y: startY, count: finals.size, finals })
-      }
-      total += finals.size
-    }
-    return total
-  }
-
-  yield part1()
-
-  function part2 () {
-    if (verbose) {
-      console.log('Part 2 :\n--------')
-    }
-    let total = 0
-    for (const { x: startX, y: startY } of starts) {
-      const finals = {}
-      const steps = [{ x: startX, y: startY, h: 0 }]
-      while (steps.length) {
-        const { x, y, h } = steps.shift()
-        for (const { dx, dy } of directions) {
-          if (isValidMove(x, y, h, dx, dy)) {
-            const newH = lines[y + dy][x + dx]
-            if (newH === 9) {
-              const id = `${x + dx},${y + dy}`
-              if (finals[id] === undefined) {
-                finals[id] = 1
+              if (trailends[id] === undefined) {
+                trailends[id] = 1
               } else {
-                ++finals[id]
+                ++trailends[id]
               }
             } else {
               steps.push({ x: x + dx, y: y + dy, h: newH })
@@ -95,12 +58,19 @@ require('../challenge')(function * ({
         }
       }
       if (verbose) {
-        console.log({ x: startX, y: startY, count: Object.keys(finals).length, finals })
+        console.log({ x: startX, y: startY, count: Object.keys(trailheads).length, finals: trailheads })
       }
-      total += Object.values(finals).reduce((total, value) => total + value, 0)
+      trailheads[`${startX},${startY}`] = trailends
     }
-    return total
+    return trailheads
   }
 
-  yield part2()
+  const trailheads = findTrailheads()
+
+  if (verbose) {
+    console.log(trailheads)
+  }
+
+  yield Object.values(trailheads).reduce((total, trailends) => total + Object.keys(trailends).length, 0)
+  yield Object.values(trailheads).reduce((total, trailends) => total + Object.values(trailends).reduce((total, value) => total + value, 0), 0)
 })
