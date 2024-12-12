@@ -136,7 +136,8 @@ require('../challenge')(async function * ({
             length = end.x - start.x + 1
           }
           alignedBorders.push({ direction: borderDirection, start, end, length })
-          alignedIndexes.reverse().forEach(index => borderCells.splice(index, 1))
+          // Ensure the splice is done the higher index first
+          alignedIndexes.sort((a, b) => b - a).forEach(index => borderCells.splice(index, 1))
         }
         const sides = alignedBorders.length
 
@@ -149,7 +150,6 @@ require('../challenge')(async function * ({
   if (verbose) {
     regions.forEach(({ type, area, perimeter, sides, cells, allBorders, alignedBorders }) => {
       console.log(type + ': area=' + area + ' perimeter=' + perimeter + ' sides=' + sides)
-      console.log('---')
 
       const region = new Array(height + 2).fill(0).map(_ => ''.padEnd(width + 2, ' '))
       cells.forEach(cell => {
@@ -184,9 +184,6 @@ require('../challenge')(async function * ({
       })
       
       console.log(region.join('\n'))
-
-      console.log('Borders checksum :', allBorders.length, alignedBorders.reduce((total, { length }) =>  total + length, 0))
-      console.log('Borders :', allBorders.map(({ x, y, direction }) => `${direction === 'horizontal' ? '-' : '|'}(${x},${y})`).join(' '))
 
       const uncheckedBorders = [...allBorders];
 
@@ -233,15 +230,16 @@ require('../challenge')(async function * ({
             uncheckedBorders.splice(pos, 1)
           }
         });
-      console.log('Unchecked borders: ', allBorders.length, uncheckedBorders.length, uncheckedBorders)
       if (errors) {
+        console.log('Borders checksum :', allBorders.length, alignedBorders.reduce((total, { length }) =>  total + length, 0))
+        console.log('Borders :', allBorders.map(({ x, y, direction }) => `${direction === 'horizontal' ? '-' : '|'}(${x},${y})`).join(' '))
+        console.log('Unchecked borders: ', allBorders.length, uncheckedBorders.length, uncheckedBorders)
         console.log(region.join('\n'))
       }
+      console.log('\n')
     })
   }
 
   yield regions.reduce((total, { area, perimeter }) => total + area * perimeter, 0)
-  yield regions.reduce((total, { area, sides }) => total + area * sides, 0) // > 901625 > 910248 908596
-
-  // stuck on node 2024/12 -verbose -sample7
+  yield regions.reduce((total, { area, sides }) => total + area * sides, 0) // > 901625 > 910248 > 908871
 })
