@@ -64,24 +64,29 @@ require('../challenge')(async function * ({
 
         const perimeter = borderCells.length
 
+        if (verbose) {
+          console.log(type + '\n-')
+          console.log('borders :', borderCells)
+        }
+
         const alignedBorders = [] // { direction: 'unknown' | 'horizontal' | 'vertical', start: {x, y}: end: {x,y} }
         while (borderCells.length) {
-          const { x, y } = borderCells.shift()
+          const { x, y, attempts } = borderCells.shift()
           let aligned = false
           for (const alignedBorder of alignedBorders) {
             const { direction, start, end } = alignedBorder
             if (direction === 'unknown') {
-              if (start.y === y && (start.x === x - 1 || start.x === x + 1)) {
+              if (start.y === y && (start.x === x + 1 || end.x === x - 1)) {
                 alignedBorder.direction = 'horizontal'
-                if (start.x < x) {
+                if (end.x < x) {
                   end.x = x
                 } else {
                   start.x = x
                 }
                 aligned = true
-              } else if (start.x === x && (start.y === y - 1 || start.y === y + 1)) {
+              } else if (start.x === x && (start.y === y + 1 || end.y === y - 1)) {
                 alignedBorder.direction = 'vertical'
-                if (start.y < y) {
+                if (end.y < y) {
                   end.y = y
                 } else {
                   start.y = y
@@ -111,13 +116,18 @@ require('../challenge')(async function * ({
             }
           }
           if (!aligned) {
-            alignedBorders.push({ direction: 'unknown', start: { x, y }, end: { x, y }})
+            if (attempts && attempts >= borderCells.length) {
+              alignedBorders.push({ direction: 'unknown', start: { x, y }, end: { x, y }})
+            } else {
+              borderCells.push({ x, y, attempts: (attempts ?? 0) + 1 })
+            }
           }
         }
         if (verbose) {
           console.log(alignedBorders)
+          process.exit(0)
         }
-        const sides = 0
+        const sides = alignedBorders.length
 
         regions.push({ type, area, perimeter, sides, cells, region })
       }
