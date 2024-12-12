@@ -69,41 +69,32 @@ require('../challenge')(async function * ({
           console.log('borders :', borderCells)
         }
 
-        const alignedBorders = [] // { direction: 'unknown' | 'horizontal' | 'vertical', start: {x, y}: end: {x,y} }
+        const alignedBorders = [] // { direction: 'unique' | 'horizontal' | 'vertical', start: {x, y}: end: {x,y} }
+        const maxAttempts = borderCells.length
         while (borderCells.length) {
-          const { x, y, attempts } = borderCells.shift()
-          let aligned = false
-          for (const alignedBorder of alignedBorders) {
-            const { direction, start, end } = alignedBorder
-            if (direction === 'unknown') {
-              if (start.y === y && (start.x === x + 1 || end.x === x - 1)) {
-                alignedBorder.direction = 'horizontal'
-                if (end.x < x) {
-                  end.x = x
-                } else {
-                  start.x = x
-                }
-                aligned = true
-              } else if (start.x === x && (start.y === y + 1 || end.y === y - 1)) {
-                alignedBorder.direction = 'vertical'
-                if (end.y < y) {
-                  end.y = y
-                } else {
-                  start.y = y
-                }
-                aligned = true
+          const start = borderCells.shift()
+          const end = { ...start }
+          const alignedIndexes = []
+          // horizontally
+          let index = -1
+          for (const {x, y} of borderCells) {
+            ++index
+            if (start.y === y) {
+              if (x === start.x - 1) {
+                start.x = x
+                alignedIndexes.push(index)
+              } else if (x === end.x + 1) {
+                end.x = x
+                alignedIndexes.push(index)
               }
-            } else if (direction === 'horizontal') {
-              if (start.y === y) {
-                if (x === start.x - 1) {
-                  start.x = x
-                  aligned = true
-                } else if (x === end.x + 1) {
-                  end.x = x
-                  aligned = true
-                }
-              }
-            } else if (direction === 'vertical') {
+            }
+          }
+
+          if (alignedIndexes.length === 0) {
+            // vertically
+            index = -1
+            for (const {x, y} of borderCells) {
+              ++index
               if (start.x === x) {
                 if (y === start.y - 1) {
                   start.y = y
@@ -114,20 +105,22 @@ require('../challenge')(async function * ({
                 }
               }
             }
+          } else {
+            direction = 'horizontal'
           }
-          if (!aligned) {
-            if (attempts && attempts >= borderCells.length) {
-              alignedBorders.push({ direction: 'unknown', start: { x, y }, end: { x, y }})
-            } else {
-              borderCells.push({ x, y, attempts: (attempts ?? 0) + 1 })
-            }
+
+          if (alignedIndexes.length === 0) {
+            direction = 'unique'
           }
-        }
-        if (verbose) {
-          console.log(alignedBorders)
-          process.exit(0)
+          alignedBorders.push({ direction, start, end })
+          alignedIndexes.forEach(index => borderCells.splice(index, 1))
         }
         const sides = alignedBorders.length
+        if (verbose) {
+          console.log(alignedBorders)
+          console.log(sides)
+          process.exit(0)
+        }
 
         regions.push({ type, area, perimeter, sides, cells, region })
       }
