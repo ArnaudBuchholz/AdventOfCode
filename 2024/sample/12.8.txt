@@ -1,0 +1,12 @@
+________________
+_______AAA______
+_____AA_AA______
+_____AAAAA______
+____AAAAAAA_____
+__AAAAAAAA______
+__AAAAAAAA_A____
+_AA_AAAAAAAA____
+__AAAAAAAAAAAA__
+___AAAAA_AA_AA__
+___AAAAAAA______
+________________

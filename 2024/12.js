@@ -8,10 +8,10 @@ require('../challenge')(async function * ({
   const width = lines[0].length
   const height = lines.length
   const directions = [
-    { dx: 0, dy: -1 },
-    { dx: 1, dy: 0 },
-    { dx: 0, dy: 1 },
-    { dx: -1, dy: 0 }
+    { dx: 0, dy: -1, label: 'horizontal-up' },
+    { dx: 1, dy: 0, label: 'vertical-left' },
+    { dx: 0, dy: 1, label: 'horizontal-down' },
+    { dx: -1, dy: 0, label: 'vertical-right' }
   ]
 
   const regions = [] // { type: 'A', area: 0, perimeter: 0, sides: 0, cells: ['0,0'...], region: ['...', ...] }
@@ -53,17 +53,17 @@ require('../challenge')(async function * ({
         const borderCells = []
         for (const cell of cells) {
           const [x, y] = cell.split(',').map(Number)
-          for (const { dx, dy } of directions) {
+          for (const { dx, dy, label } of directions) {
             const nx = x + dx
             const ny = y + dy
             if (!cells.includes(`${nx},${ny}`)) {
-              borderCells.push({ x: nx, y: ny, direction: dx === 0 ? 'horizontal' : 'vertical' })
+              borderCells.push({ x: nx, y: ny, direction: label })
             }
           }
         }
         const perimeter = borderCells.length
 
-        const allBorders = [...borderCells]
+        const individualBorders = [...borderCells]
 
         const alignedBorders = [] // { direction: 'unique' | 'horizontal' | 'vertical', start: {x, y}: end: {x,y} }
         while (borderCells.length) {
@@ -72,14 +72,14 @@ require('../challenge')(async function * ({
           const alignedIndexes = []
           let index = 0
 
-          if (expectedDirection === 'horizontal') {
+          if (expectedDirection.startsWith('horizontal')) {
             while (index < borderCells.length) {
               if (alignedIndexes.includes(index)) {
                 ++index
                 continue
               }
-              const {x, y, direction } = borderCells[index]
-              if (direction !== 'horizontal') {
+              const { x, y, direction } = borderCells[index]
+              if (direction !== expectedDirection) {
                 ++index
                 continue
               }
@@ -96,14 +96,14 @@ require('../challenge')(async function * ({
               }
               ++index
             }
-          } else if (expectedDirection === 'vertical') {
+          } else if (expectedDirection.startsWith('vertical')) {
             while (index < borderCells.length) {
               if (alignedIndexes.includes(index)) {
                 ++index
                 continue
               }
-              const {x, y, direction } = borderCells[index]
-              if (direction !== 'vertical') {
+              const { x, y, direction } = borderCells[index]
+              if (direction !== expectedDirection) {
                 ++index
                 continue
               }
@@ -124,15 +124,15 @@ require('../challenge')(async function * ({
 
           let borderDirection
           if (alignedIndexes.length === 0) {
-            borderDirection = 'unique'
+            borderDirection = expectedDirection + '-unique'
           } else {
             borderDirection = expectedDirection
           }
 
-          let length = 1
-          if (borderDirection === 'vertical') {
+          let length
+          if (borderDirection.startsWith('vertical')) {
             length = end.y - start.y + 1
-          } else if (borderDirection === 'horizontal') {
+          } else {
             length = end.x - start.x + 1
           }
           alignedBorders.push({ direction: borderDirection, start, end, length })
@@ -141,14 +141,14 @@ require('../challenge')(async function * ({
         }
         const sides = alignedBorders.length
 
-        regions.push({ type, area, perimeter, sides, cells, allBorders, alignedBorders, region })
+        regions.push({ type, area, perimeter, sides, cells, individualBorders, alignedBorders, region })
       }
     }
   }
 
   identifyRegions()
   if (verbose) {
-    regions.forEach(({ type, area, perimeter, sides, cells, allBorders, alignedBorders }) => {
+    regions.forEach(({ type, area, perimeter, sides, cells, individualBorders, alignedBorders }) => {
       console.log(type + ': area=' + area + ' perimeter=' + perimeter + ' sides=' + sides)
 
       const region = new Array(height + 2).fill(0).map(_ => ''.padEnd(width + 2, ' '))
@@ -157,40 +157,53 @@ require('../challenge')(async function * ({
         plot(region, x + 1, y + 1, '.')
       })
 
-      allBorders.forEach(({ x, y, direction }) => {
+      individualBorders.forEach(({ x, y, direction }) => {
         let border = region[y + 1][x + 1]
         if (border === ' ') {
-          if (direction === 'horizontal') {
+          if (direction.startsWith('horizontal')) {
             border = '-'
           } else {
             border = '|'
           }
         } else if (border === '-') {
-          if (direction === 'horizontal') {
+          if (direction.startsWith('horizontal')) {
             border = '='
           } else {
             border = '+'
           }
         } else if (border === '|') {
-          if (direction === 'horizontal') {
+          if (direction.startsWith('horizontal')) {
             border = '+'
           } else {
             border = '!'
           }
-        } else {
+        } else if (border !== '#') {
           border = '#'
+        } else {
+          border = '@'
         }
         plot(region, x + 1, y + 1, border)
       })
-      
-      console.log(region.join('\n'))
 
-      const uncheckedBorders = [...allBorders];
+      console.log(region.join('\n'))
+      console.log('Borders checksum :', individualBorders.length, alignedBorders.reduce((total, { length }) => total + length, 0))
+      console.log('Borders :', individualBorders.map(({ x, y, direction }) => `(${x},${y},${direction})`).join(' '))
+
+      const uncheckedBorders = [...individualBorders]
 
       let errors = 0
       alignedBorders
         .sort(({ direction: a }, { direction: b }) => {
-          const order = ['unique', 'horizontal', 'vertical']
+          const order = [
+            'horizontal-up-unique',
+            'horizontal-down-unique',
+            'vertical-left-unique',
+            'vertical-right-unique',
+            'horizontal-up',
+            'horizontal-down',
+            'vertical-left',
+            'vertical-right'
+          ]
           if (a === b) {
             return 0
           }
@@ -198,23 +211,23 @@ require('../challenge')(async function * ({
         })
         .forEach(({ direction, start, end, length }, index) => {
           console.log(index, '(', start.x, ',', start.y, ') ', direction, length)
-          if (direction === 'horizontal') {
+          if (direction.startsWith('horizontal')) {
             const y = start.y
             for (let x = start.x; x <= end.x; ++x) {
-              const pos = uncheckedBorders.findIndex(border => border.direction === direction && border.x === x && border.y === y)
+              const pos = uncheckedBorders.findIndex(border => direction.startsWith(border.direction) && border.x === x && border.y === y)
               if (pos === -1) {
-                console.log('❌ Problem on ', x, ',', y, 'horizontal')
+                console.log('❌ Problem on ', x, ',', y, direction)
                 plot(region, x + 1, y + 1, '?')
                 ++errors
               }
               uncheckedBorders.splice(pos, 1)
             }
-          } else if (direction === 'vertical') {
+          } else if (direction.startsWith('vertical')) {
             const x = start.x
             for (let y = start.y; y <= end.y; ++y) {
-              const pos = uncheckedBorders.findIndex(border => border.direction === direction && border.x === x && border.y === y)
+              const pos = uncheckedBorders.findIndex(border => direction.startsWith(border.direction) && border.x === x && border.y === y)
               if (pos === -1) {
-                console.log('❌ Problem on ', x, ',', y, 'vertical')
+                console.log('❌ Problem on ', x, ',', y, direction)
                 plot(region, x + 1, y + 1, '?')
                 ++errors
               }
@@ -229,11 +242,12 @@ require('../challenge')(async function * ({
             }
             uncheckedBorders.splice(pos, 1)
           }
-        });
+        })
+      if (uncheckedBorders.length) {
+        console.log('❌ Remaining unchecked borders: ', individualBorders.length, uncheckedBorders.length, uncheckedBorders)
+        ++errors
+      }
       if (errors) {
-        console.log('Borders checksum :', allBorders.length, alignedBorders.reduce((total, { length }) =>  total + length, 0))
-        console.log('Borders :', allBorders.map(({ x, y, direction }) => `${direction === 'horizontal' ? '-' : '|'}(${x},${y})`).join(' '))
-        console.log('Unchecked borders: ', allBorders.length, uncheckedBorders.length, uncheckedBorders)
         console.log(region.join('\n'))
       }
       console.log('\n')
@@ -241,5 +255,5 @@ require('../challenge')(async function * ({
   }
 
   yield regions.reduce((total, { area, perimeter }) => total + area * perimeter, 0)
-  yield regions.reduce((total, { area, sides }) => total + area * sides, 0) // > 901625 > 910248 > 908871
+  yield regions.reduce((total, { area, sides }) => total + area * sides, 0)
 })
