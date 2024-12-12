@@ -194,6 +194,7 @@ require('../challenge')(async function * ({
 
       const uncheckedBorders = [...allBorders];
 
+      let errors = 0
       alignedBorders
         .sort(({ direction: a }, { direction: b }) => {
           const order = ['unique', 'horizontal', 'vertical']
@@ -209,7 +210,9 @@ require('../challenge')(async function * ({
             for (let x = start.x; x <= end.x; ++x) {
               const pos = uncheckedBorders.findIndex(border => border.direction === direction && border.x === x && border.y === y)
               if (pos === -1) {
-                console.error('Problem on ', x, ',', y)
+                console.log('❌ Problem on ', x, ',', y, 'horizontal')
+                plot(region, x + 1, y + 1, '?')
+                ++errors
               }
               uncheckedBorders.splice(pos, 1)
             }
@@ -218,25 +221,31 @@ require('../challenge')(async function * ({
             for (let y = start.y; y <= end.y; ++y) {
               const pos = uncheckedBorders.findIndex(border => border.direction === direction && border.x === x && border.y === y)
               if (pos === -1) {
-                console.error('Problem on ', x, ',', y)
+                console.log('❌ Problem on ', x, ',', y, 'vertical')
+                plot(region, x + 1, y + 1, '?')
+                ++errors
               }
               uncheckedBorders.splice(pos, 1)
             }
           } else {
             const pos = uncheckedBorders.findIndex(border => border.x === start.x && border.y === start.y)
             if (pos === -1) {
-              console.error('Problem on ', x, ',', y)
+              console.log('❌ Problem on ', start.x, ',', start.y, 'unique')
+              plot(region, start.x + 1, start.y + 1, '?')
+              ++errors
             }
             uncheckedBorders.splice(pos, 1)
           }
         });
       console.log('Unchecked borders: ', allBorders.length, uncheckedBorders.length, uncheckedBorders)
+      if (errors) {
+        console.log(region.join('\n'))
+      }
     })
   }
 
   yield regions.reduce((total, { area, perimeter }) => total + area * perimeter, 0)
   yield regions.reduce((total, { area, sides }) => total + area * sides, 0) // > 901625 > 910248
 
-  // Stuck on node 2024/12 -sample6 -verbose
-  // C area should have 53 sides
+  // stuck on node 2024/12 -verbose -sample6
 })
