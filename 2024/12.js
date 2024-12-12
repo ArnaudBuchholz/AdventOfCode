@@ -57,7 +57,7 @@ require('../challenge')(async function * ({
             const nx = x + dx
             const ny = y + dy
             if (!cells.includes(`${nx},${ny}`)) {
-              borderCells.push({ x: nx, y: ny })
+              borderCells.push({ x: nx, y: ny, direction: dx === 0 ? 'horizontal' : 'vertical' })
             }
           }
         }
@@ -68,7 +68,7 @@ require('../challenge')(async function * ({
 
         const alignedBorders = [] // { direction: 'unique' | 'horizontal' | 'vertical', start: {x, y}: end: {x,y} }
         while (borderCells.length) {
-          let direction
+          let borderDirection
           const start = { ...borderCells.shift() }
           const end = { ...start }
           const alignedIndexes = []
@@ -79,7 +79,11 @@ require('../challenge')(async function * ({
               ++index
               continue
             }
-            const {x, y} = borderCells[index]
+            const {x, y, direction } = borderCells[index]
+            if (direction !== 'horizontal') {
+              ++index
+              continue
+            }
             if (start.y === y) {
               if (x === start.x - 1) {
                 start.x = x
@@ -102,7 +106,11 @@ require('../challenge')(async function * ({
                 ++index
                 continue
               }
-              const {x, y} = borderCells[index]
+              const {x, y, direction } = borderCells[index]
+              if (direction !== 'vertical') {
+                ++index
+                continue
+              }
               if (start.x === x) {
                 if (y === start.y - 1) {
                   start.y = y
@@ -117,15 +125,22 @@ require('../challenge')(async function * ({
               ++index
             }
           } else {
-            direction = 'horizontal'
+            borderDirection = 'horizontal'
           }
 
           if (alignedIndexes.length === 0) {
-            direction = 'unique'
-          } else if (direction === undefined) {
-            direction = 'vertical'
+            borderDirection = 'unique'
+          } else if (borderDirection === undefined) {
+            borderDirection = 'vertical'
           }
-          alignedBorders.push({ direction, start, end })
+
+          let length = 1
+          if (borderDirection === 'vertical') {
+            length = end.y - start.y + 1
+          } else if (borderDirection === 'horizontal') {
+            length = end.x - start.x + 1
+          }
+          alignedBorders.push({ direction: borderDirection, start, end, length })
           alignedIndexes.reverse().forEach(index => borderCells.splice(index, 1))
         }
         const sides = alignedBorders.length
@@ -137,32 +152,90 @@ require('../challenge')(async function * ({
 
   identifyRegions()
   if (verbose) {
-    regions.forEach(({ type, area, perimeter, sides, cells, allBorders }) => {
+    regions.forEach(({ type, area, perimeter, sides, cells, allBorders, alignedBorders }) => {
       console.log(type + ': area=' + area + ' perimeter=' + perimeter + ' sides=' + sides)
       console.log('---')
-      console.log('allBorders.length=', allBorders.length)
 
       const region = new Array(height + 2).fill(0).map(_ => ''.padEnd(width + 2, ' '))
       cells.forEach(cell => {
         const [x, y] = cell.split(',').map(Number)
-        if (x === DEBUG_FOCUS_X && y === DEBUG_FOCUS_Y) {
-          plot(region, x + 1, y + 1, 'X')
-        } else {
-          plot(region, x + 1, y + 1, '.')
-        }
+        plot(region, x + 1, y + 1, '.')
       })
 
-      allBorders.forEach(({ x, y }) => {
-        const border = region[y + 1][x + 1]
-        plot(region, x + 1, y + 1, (border === ' ') ? 1 : Number(border) + 1)
+      allBorders.forEach(({ x, y, direction }) => {
+        let border = region[y + 1][x + 1]
+        if (border === ' ') {
+          if (direction === 'horizontal') {
+            border = '-'
+          } else {
+            border = '|'
+          }
+        } else if (border === '-') {
+          if (direction === 'horizontal') {
+            border = '='
+          } else {
+            border = '+'
+          }
+        } else if (border === '|') {
+          if (direction === 'horizontal') {
+            border = '+'
+          } else {
+            border = '!'
+          }
+        } else {
+          border = '#'
+        }
+        plot(region, x + 1, y + 1, border)
       })
       
       console.log(region.join('\n'))
+
+      console.log('Borders checksum :', allBorders.length, alignedBorders.reduce((total, { length }) =>  total + length, 0))
+
+      const uncheckedBorders = [...allBorders];
+
+      alignedBorders
+        .sort(({ direction: a }, { direction: b }) => {
+          const order = ['unique', 'horizontal', 'vertical']
+          if (a === b) {
+            return 0
+          }
+          return order.indexOf(b) - order.indexOf(a)
+        })
+        .forEach(({ direction, start, end, length }, index) => {
+          console.log(index, '(', start.x, ',', start.y, ') ', direction, length)
+          if (direction === 'horizontal') {
+            const y = start.y
+            for (let x = start.x; x <= end.x; ++x) {
+              const pos = uncheckedBorders.findIndex(border => border.direction === direction && border.x === x && border.y === y)
+              if (pos === -1) {
+                console.error('Problem on ', x, ',', y)
+              }
+              uncheckedBorders.splice(pos, 1)
+            }
+          } else if (direction === 'vertical') {
+            const x = start.x
+            for (let y = start.y; y <= end.y; ++y) {
+              const pos = uncheckedBorders.findIndex(border => border.direction === direction && border.x === x && border.y === y)
+              if (pos === -1) {
+                console.error('Problem on ', x, ',', y)
+              }
+              uncheckedBorders.splice(pos, 1)
+            }
+          } else {
+            const pos = uncheckedBorders.findIndex(border => border.x === start.x && border.y === start.y)
+            if (pos === -1) {
+              console.error('Problem on ', x, ',', y)
+            }
+            uncheckedBorders.splice(pos, 1)
+          }
+        });
+      console.log('Unchecked borders: ', allBorders.length, uncheckedBorders.length, uncheckedBorders)
     })
   }
 
   yield regions.reduce((total, { area, perimeter }) => total + area * perimeter, 0)
-  yield regions.reduce((total, { area, sides }) => total + area * sides, 0) // > 901625
+  yield regions.reduce((total, { area, sides }) => total + area * sides, 0) // > 901625 > 910248
 
   // Stuck on node 2024/12 -sample6 -verbose
   // C area should have 53 sides
