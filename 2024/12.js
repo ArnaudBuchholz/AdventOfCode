@@ -64,46 +64,57 @@ require('../challenge')(async function * ({
 
         const perimeter = borderCells.length
 
-        if (verbose) {
-          console.log(type + '\n-')
-          console.log('borders :', borderCells)
-        }
+        const allBorders = [...borderCells]
 
         const alignedBorders = [] // { direction: 'unique' | 'horizontal' | 'vertical', start: {x, y}: end: {x,y} }
-        const maxAttempts = borderCells.length
         while (borderCells.length) {
-          const start = borderCells.shift()
+          let direction
+          const start = { ...borderCells.shift() }
           const end = { ...start }
           const alignedIndexes = []
           // horizontally
-          let index = -1
-          for (const {x, y} of borderCells) {
-            ++index
+          let index = 0
+          while (index < borderCells.length) {
+            if (alignedIndexes.includes(index)) {
+              ++index
+              continue
+            }
+            const {x, y} = borderCells[index]
             if (start.y === y) {
               if (x === start.x - 1) {
                 start.x = x
                 alignedIndexes.push(index)
+                index = -1
               } else if (x === end.x + 1) {
                 end.x = x
                 alignedIndexes.push(index)
+                index = -1
               }
             }
+            ++index
           }
 
           if (alignedIndexes.length === 0) {
             // vertically
-            index = -1
-            for (const {x, y} of borderCells) {
-              ++index
+            index = 0
+            while (index < borderCells.length) {
+              if (alignedIndexes.includes(index)) {
+                ++index
+                continue
+              }
+              const {x, y} = borderCells[index]
               if (start.x === x) {
                 if (y === start.y - 1) {
                   start.y = y
-                  aligned = true
-                } else if (x === end.x + 1) {
+                  alignedIndexes.push(index)
+                  index = -1
+                } else if (y === end.y + 1) {
                   end.y = y
-                  aligned = true
+                  alignedIndexes.push(index)
+                  index = -1
                 }
               }
+              ++index
             }
           } else {
             direction = 'horizontal'
@@ -111,27 +122,48 @@ require('../challenge')(async function * ({
 
           if (alignedIndexes.length === 0) {
             direction = 'unique'
+          } else if (direction === undefined) {
+            direction = 'vertical'
           }
           alignedBorders.push({ direction, start, end })
-          alignedIndexes.forEach(index => borderCells.splice(index, 1))
+          alignedIndexes.reverse().forEach(index => borderCells.splice(index, 1))
         }
         const sides = alignedBorders.length
-        if (verbose) {
-          console.log(alignedBorders)
-          console.log(sides)
-          process.exit(0)
-        }
 
-        regions.push({ type, area, perimeter, sides, cells, region })
+        regions.push({ type, area, perimeter, sides, cells, allBorders, alignedBorders, region })
       }
     }
   }
 
   identifyRegions()
   if (verbose) {
-    regions.forEach(({ type, area, perimeter, sides, region }) => console.log(type + ': area=' + area + ' perimeter=' + perimeter + ' sides=' + sides + '\n---\n' + region.join('\n')))
+    regions.forEach(({ type, area, perimeter, sides, cells, allBorders }) => {
+      console.log(type + ': area=' + area + ' perimeter=' + perimeter + ' sides=' + sides)
+      console.log('---')
+      console.log('allBorders.length=', allBorders.length)
+
+      const region = new Array(height + 2).fill(0).map(_ => ''.padEnd(width + 2, ' '))
+      cells.forEach(cell => {
+        const [x, y] = cell.split(',').map(Number)
+        if (x === DEBUG_FOCUS_X && y === DEBUG_FOCUS_Y) {
+          plot(region, x + 1, y + 1, 'X')
+        } else {
+          plot(region, x + 1, y + 1, '.')
+        }
+      })
+
+      allBorders.forEach(({ x, y }) => {
+        const border = region[y + 1][x + 1]
+        plot(region, x + 1, y + 1, (border === ' ') ? 1 : Number(border) + 1)
+      })
+      
+      console.log(region.join('\n'))
+    })
   }
 
   yield regions.reduce((total, { area, perimeter }) => total + area * perimeter, 0)
-  yield regions.reduce((total, { area, sides }) => total + area * sides, 0)
+  yield regions.reduce((total, { area, sides }) => total + area * sides, 0) // > 901625
+
+  // Stuck on node 2024/12 -sample6 -verbose
+  // C area should have 53 sides
 })
