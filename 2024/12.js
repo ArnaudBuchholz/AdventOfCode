@@ -61,46 +61,42 @@ require('../challenge')(async function * ({
             }
           }
         }
-
         const perimeter = borderCells.length
 
         const allBorders = [...borderCells]
 
         const alignedBorders = [] // { direction: 'unique' | 'horizontal' | 'vertical', start: {x, y}: end: {x,y} }
         while (borderCells.length) {
-          let borderDirection
-          const start = { ...borderCells.shift() }
+          const { direction: expectedDirection, ...start } = { ...borderCells.shift() }
           const end = { ...start }
           const alignedIndexes = []
-          // horizontally
           let index = 0
-          while (index < borderCells.length) {
-            if (alignedIndexes.includes(index)) {
-              ++index
-              continue
-            }
-            const {x, y, direction } = borderCells[index]
-            if (direction !== 'horizontal') {
-              ++index
-              continue
-            }
-            if (start.y === y) {
-              if (x === start.x - 1) {
-                start.x = x
-                alignedIndexes.push(index)
-                index = -1
-              } else if (x === end.x + 1) {
-                end.x = x
-                alignedIndexes.push(index)
-                index = -1
-              }
-            }
-            ++index
-          }
 
-          if (alignedIndexes.length === 0) {
-            // vertically
-            index = 0
+          if (expectedDirection === 'horizontal') {
+            while (index < borderCells.length) {
+              if (alignedIndexes.includes(index)) {
+                ++index
+                continue
+              }
+              const {x, y, direction } = borderCells[index]
+              if (direction !== 'horizontal') {
+                ++index
+                continue
+              }
+              if (start.y === y) {
+                if (x === start.x - 1) {
+                  start.x = x
+                  alignedIndexes.push(index)
+                  index = -1
+                } else if (x === end.x + 1) {
+                  end.x = x
+                  alignedIndexes.push(index)
+                  index = -1
+                }
+              }
+              ++index
+            }
+          } else if (expectedDirection === 'vertical') {
             while (index < borderCells.length) {
               if (alignedIndexes.includes(index)) {
                 ++index
@@ -124,14 +120,13 @@ require('../challenge')(async function * ({
               }
               ++index
             }
-          } else {
-            borderDirection = 'horizontal'
           }
 
+          let borderDirection
           if (alignedIndexes.length === 0) {
             borderDirection = 'unique'
-          } else if (borderDirection === undefined) {
-            borderDirection = 'vertical'
+          } else {
+            borderDirection = expectedDirection
           }
 
           let length = 1
@@ -191,6 +186,7 @@ require('../challenge')(async function * ({
       console.log(region.join('\n'))
 
       console.log('Borders checksum :', allBorders.length, alignedBorders.reduce((total, { length }) =>  total + length, 0))
+      console.log('Borders :', allBorders.map(({ x, y, direction }) => `${direction === 'horizontal' ? '-' : '|'}(${x},${y})`).join(' '))
 
       const uncheckedBorders = [...allBorders];
 
@@ -245,7 +241,7 @@ require('../challenge')(async function * ({
   }
 
   yield regions.reduce((total, { area, perimeter }) => total + area * perimeter, 0)
-  yield regions.reduce((total, { area, sides }) => total + area * sides, 0) // > 901625 > 910248
+  yield regions.reduce((total, { area, sides }) => total + area * sides, 0) // > 901625 > 910248 908596
 
-  // stuck on node 2024/12 -verbose -sample6
+  // stuck on node 2024/12 -verbose -sample7
 })
