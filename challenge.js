@@ -1,6 +1,6 @@
 const { accessSync: access, readFileSync: readFile } = require('fs')
 const { join, relative, sep } = require('path')
-const assert = require('assert')
+const assert = require('assert/strict')
 
 const [, script, ...args] = process.argv
 const [year, day] = relative(__dirname, script).split(sep)
