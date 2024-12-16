@@ -14,22 +14,19 @@ require('../challenge')(async function * ({
   ]
 
   function solveMaze () {
-    const valid = new Set()
-    const steps = [{ x: 1, y: lines.length - 2, path: new Set() }]
+    const steps = [{ x: 1, y: lines.length - 2 }]
     const visited = new Set()
-    const inSteps = new Set()
-    inSteps.add(`${1},${lines.length - 2}`)
     const loop = buildLoopControl(Number.POSITIVE_INFINITY)
-    const addToValid = path => {
-      for (const key of path.keys()) {
-        valid.add(key)
-      }
-    }
     while (steps.length) {
-      loop.log('Part 1 steps={steps}', { steps: steps.length })
-      const { x, y, path } = steps.shift()
+      loop.log('solveMaze steps={steps}', { steps: steps.length })
+      const { x, y } = steps.shift()
+      if (lines[y][x] === 'E') {
+        continue // exit found
+      }
       const key = `${x},${y}`
-      inSteps.delete(key)
+      if (lines[y][x] === '#' || visited.has(key)) {
+        continue //
+      }
       visited.add(key)
       for (const { dx, dy } of directions) {
         const nx = x + dx
@@ -38,26 +35,9 @@ require('../challenge')(async function * ({
         if (next === '#') {
           continue // wall
         }
-        const nkey = `${nx},${ny}`
-        if (next === 'E') {
-          addToValid(path)
-          continue
-        }
-        if (valid.has(nkey)) {
-          addToValid(path)
-          continue
-        }
-        // Visited does not mean we took a decision about it
-        if (inSteps.has(nkey) || visited.has(nkey)) {
-          continue // loop
-        }
-        inSteps.add(nkey)
-        const newPath = new Set([...path])
-        newPath.add(nkey)
         const step = {
           x: nx,
-          y: ny,
-          path: newPath
+          y: ny
         }
         steps.unshift(step)
       }
@@ -65,7 +45,7 @@ require('../challenge')(async function * ({
     if (verbose) {
       console.log('Iterations :', loop.logCount)
       const solutions = [...lines]
-      for (const key of valid.keys()) {
+      for (const key of visited.keys()) {
         const [x, y] = key.split(',').map(Number)
         plot(solutions, x, y, 'O')
       }
