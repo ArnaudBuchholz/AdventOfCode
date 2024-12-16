@@ -25,35 +25,41 @@ require('../challenge')(async function * ({
       loop.log('Part 1 steps={steps} finalScore={finalScore}', { steps: steps.length, finalScore })
       const { x, y, direction, score, visited } = steps.shift()
       if (lines[y][x] === 'E') {
-        finalScore = score
-        console.log('Solution : ', score, ' steps=', visited.size)
+        if (score < finalScore) {
+          finalScore = score
+          console.log('Solution : ', score, ' steps=', visited.size)
+        }
       }
       visited.add(`${x},${y}`)
-      const check = (newDirection, addToScore = 0) => {
+      const check = (newDirection) => {
         const { dx, dy } = directions[newDirection]
         const nx = x + dx
         const ny = y + dy
-        if (visited.has(`${nx},${ny}`)) {
-          return // loop
-        }
         if (map[ny][nx] === '#') {
           return // wall
         }
-        const newScore = score + 1 + addToScore
+        if (visited.has(`${nx},${ny}`)) {
+          return // loop
+        }
+        let newScore = score + 1
+        if (newDirection !== direction) {
+          newScore += 1000
+        }
         if (newScore >= finalScore) {
           return // too high
         }
-        steps.unshift({
+        const step = {
           x: nx,
           y: ny,
           direction: newDirection,
           score: newScore,
           visited: new Set([...visited])
-        })
+        }
+        steps.unshift(step)
       }
+      check((direction + 1) % directions.length)
+      check(direction - 1 < 0 ? direction - 1 + directions.length : direction - 1)
       check(direction)
-      check(direction - 1 < 0 ? direction - 1 + directions.length : direction - 1, 1000) // -90°
-      check((direction + 1) % directions.length, 1000) // +90°
     }
     return finalScore
   }
@@ -61,7 +67,7 @@ require('../challenge')(async function * ({
   if (verbose) {
     console.log('Part 1 :\n--------')
   }
-  yield part1() < 321992
+  yield part1() // < 321992
 
   if (verbose) {
     console.log('Part 2 :\n--------')
