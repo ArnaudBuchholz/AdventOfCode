@@ -7,51 +7,47 @@ require('../challenge')(async function * ({
 
   /** ordered clockwise */
   const directions = [ 
-    { dx: 0, dy: -1 },
-    { dx: 1, dy: 0 },
-    { dx: 0, dy: 1 },
-    { dx: -1, dy: 0 }
+    { from: 'v', dx: 0, dy: -1 },
+    { from: '<', dx: 1, dy: 0 },
+    { from: '^', dx: 0, dy: 1 },
+    { from: '>', dx: -1, dy: 0,  }
   ]
 
   function solveMaze () {
-    const steps = [{ x: 1, y: lines.length - 2 }]
+    const steps = [{ x: lines[0].length - 2, y: 1 }]
     const visited = new Set()
     const loop = buildLoopControl(Number.POSITIVE_INFINITY)
+    const solutions = [...lines]
     while (steps.length) {
       loop.log('solveMaze steps={steps}', { steps: steps.length })
       const { x, y } = steps.shift()
-      if (lines[y][x] === 'E') {
-        continue // exit found
-      }
-      const key = `${x},${y}`
-      if (lines[y][x] === '#' || visited.has(key)) {
-        continue //
-      }
-      visited.add(key)
-      for (const { dx, dy } of directions) {
+      for (const { dx, dy, from } of directions) {
         const nx = x + dx
         const ny = y + dy
         const next = lines[ny][nx]
+        const key = `${nx},${ny}`
+        if (visited.has(key)) {
+          continue
+        }
+        visited.add(key)
         if (next === '#') {
           continue // wall
         }
-        const step = {
-          x: nx,
-          y: ny
+        if (next !== 'S' && next !== 'E') {
+          plot(solutions, nx, ny, from)
+          const step = {
+            x: nx,
+            y: ny,
+            from
+          }
+          steps.push(step)
         }
-        steps.unshift(step)
       }
     }
     if (verbose) {
       console.log('Iterations :', loop.logCount)
-      const solutions = [...lines]
-      for (const key of visited.keys()) {
-        const [x, y] = key.split(',').map(Number)
-        plot(solutions, x, y, 'O')
-      }
       console.log(solutions.join('\n'))
     }
-    return finalScore
   }
 
   // function part1() {
